@@ -1,0 +1,53 @@
+# Node.js / npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+dist/
+.vercel
+
+# Environnement
+.env
+.env.local
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+build/
+dist/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# Temporary files
+tmp/
+temp/
