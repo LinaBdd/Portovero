@@ -1,76 +1,34 @@
-import { Container } from "../ui/container";
+import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="border-t py-16">
+    <footer className="mt-20 border-t">
 
-      <Container>
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-6 py-10">
 
-        <div className="grid gap-10 md:grid-cols-4">
+        <h2 className="text-2xl font-serif tracking-[0.3em]">
+          PORTOVERO
+        </h2>
 
-          <div>
+        <div className="flex gap-8 text-sm text-neutral-600">
 
-            <h3 className="font-serif text-3xl">
-              Portovero
-            </h3>
+          <Link href="/">Home</Link>
 
-            <p className="mt-4 text-neutral-500">
-              Timeless luxury for modern elegance.
-            </p>
+          <Link href="/shop">Shop</Link>
 
-          </div>
+          <Link href="/collections">Collections</Link>
 
-          <div>
+          <Link href="/about">About</Link>
 
-            <h4 className="mb-4 font-semibold">
-              Shop
-            </h4>
-
-            <ul className="space-y-3 text-neutral-500">
-
-              <li>Men</li>
-              <li>Women</li>
-              <li>Accessories</li>
-
-            </ul>
-
-          </div>
-
-          <div>
-
-            <h4 className="mb-4 font-semibold">
-              Company
-            </h4>
-
-            <ul className="space-y-3 text-neutral-500">
-
-              <li>About</li>
-              <li>Journal</li>
-              <li>Contact</li>
-
-            </ul>
-
-          </div>
-
-          <div>
-
-            <h4 className="mb-4 font-semibold">
-              Support
-            </h4>
-
-            <ul className="space-y-3 text-neutral-500">
-
-              <li>FAQ</li>
-              <li>Shipping</li>
-              <li>Returns</li>
-
-            </ul>
-
-          </div>
+          <Link href="/contact">Contact</Link>
 
         </div>
 
-      </Container>
+        <p className="text-sm text-neutral-500">
+          © 2026 Portovero. All rights reserved.
+        </p>
+
+      </div>
 
     </footer>
   );

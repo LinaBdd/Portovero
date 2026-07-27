@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Product } from "../../types/product";
 import { ProductActions } from "./ProductActions";
 import { ProductImage } from "./ProductImage";
-
+import { WishlistButton } from "./WishlistButton";
 interface Props {
   product: Product;
 }
@@ -26,7 +26,13 @@ export function ProductCard({ product }: Props) {
         </Link>
 
         <ProductActions />
+        <div className="absolute right-4 top-4">
 
+    <WishlistButton
+        product={product}
+    />
+
+</div>
       </div>
 
       <div className="mt-5 space-y-2">

@@ -5,7 +5,7 @@ export function BrandImage() {
     <div className="overflow-hidden rounded-[40px]">
 
       <Image
-        src="/images/brand/story.jpg"
+        src="/images/brand/story.jpeg"
         alt="Portovero"
         width={700}
         height={900}

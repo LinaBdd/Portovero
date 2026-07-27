@@ -7,7 +7,7 @@ export function HeroImage() {
       <div className="overflow-hidden rounded-[40px]">
 
         <Image
-          src="/images/hero.jpg"
+          src="/images/hero/hero1.jpg"
           alt="Portovero"
           width={700}
           height={900}

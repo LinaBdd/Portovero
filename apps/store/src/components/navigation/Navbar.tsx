@@ -1,46 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { Search, Heart, ShoppingBag } from "lucide-react";
+import { Container } from "../ui/container";
 
-import { Container } from "../../components/ui/container";
-import { Logo } from "../../components/ui/logo";
-import { NavLinks } from "./NavLinks";
+import { DesktopNavigation } from "./DesktopNavigation";
+import { MobileNavigation } from "./MobileNavigation";
+import { NavIcons } from "./NavIcons";
+import { Logo } from "./Logo";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-neutral-200/70 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
       <Container>
-        <div className="flex h-20 items-center justify-between">
+        <div className="flex h-24 items-center justify-between">
+
+          <MobileNavigation />
 
           <Logo />
 
-          <NavLinks />
+          <DesktopNavigation />
 
-          <div className="flex items-center gap-5">
-
-            <Link
-              href="/search"
-              className="transition hover:opacity-70"
-            >
-              <Search size={20} />
-            </Link>
-
-            <Link
-              href="/wishlist"
-              className="transition hover:opacity-70"
-            >
-              <Heart size={20} />
-            </Link>
-
-            <Link
-              href="/cart"
-              className="transition hover:opacity-70"
-            >
-              <ShoppingBag size={20} />
-            </Link>
-
-          </div>
+          <NavIcons />
 
         </div>
       </Container>

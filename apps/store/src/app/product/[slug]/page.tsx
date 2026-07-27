@@ -31,7 +31,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <>
-      <Navbar />
+      
 
       <main className="mx-auto max-w-7xl px-6 py-20">
 
@@ -56,7 +56,7 @@ export default async function ProductPage({ params }: Props) {
 
       </main>
 
-      <Footer />
+      
 
     </>
   );

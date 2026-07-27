@@ -44,4 +44,47 @@ export const products: Product[] = [
 
     tags: ["linen", "summer", "luxury"],
   },
+  {
+    id: "shirt-002",
+
+    slug: "black-linen-shirt",
+
+    name: "Black Linen Shirt",
+
+    gender: "men",
+
+    category: "shirts",
+
+    collection: "summer",
+
+    description:
+      "Luxury black linen shirt.",
+
+    price: 7900,
+
+    oldPrice: 8900,
+
+    rating: 4.8,
+
+    reviews: 81,
+
+    stock: 18,
+
+    featured: true,
+
+    bestseller: false,
+
+    newArrival: true,
+
+    colors: ["Black"],
+
+    sizes: ["S","M","L","XL"],
+
+    images:[
+        "/images/products/shirt1.webp",
+        "/images/products/shirt2.webp",
+    ],
+
+    tags:["linen","black","summer"],
+},
 ];

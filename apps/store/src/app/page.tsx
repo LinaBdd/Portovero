@@ -1,4 +1,4 @@
-import { Navbar } from "../components/navigation";
+
 import { Hero } from "../components/hero/Hero";
 import { FeaturedCollections } from "../components/sections/featured-collections";
 import {BestSellers} from "../components/sections/best-sellers/BestSellers";
@@ -11,7 +11,7 @@ import {InstagramFeed} from "../components/sections/instagram/InstagramFeed";
 export default function Home() {
   return (
     <>
-      <Navbar />
+      
 
       <main>
         <Hero />
