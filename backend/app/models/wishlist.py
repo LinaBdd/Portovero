@@ -1,6 +1,7 @@
 from sqlalchemy import (
     DateTime,
     ForeignKey,
+    UniqueConstraint,
     func,
 )
 
@@ -15,6 +16,14 @@ from app.database.core import Base
 
 class Wishlist(Base):
     __tablename__ = "wishlists"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "product_id",
+            name="uq_user_product_wishlist",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -46,4 +55,7 @@ class Wishlist(Base):
         back_populates="wishlist",
     )
 
-    product = relationship("Product")
+    product = relationship(
+        "Product",
+        back_populates="wishlist_items",
+    )

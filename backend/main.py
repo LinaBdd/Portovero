@@ -20,8 +20,8 @@ from app.routes.shipping_method import router as shipping_method_router
 from app.routes.order import router as order_router
 from app.routes.payment import router as payment_router
 from app.routes.checkout import router as checkout_router
-
-
+from app.routes.coupon import router as coupon_router
+from app.routes.wishlist import router as wishlist_router
 
 app = FastAPI(
     title="Portovero API",
@@ -57,3 +57,5 @@ app.include_router(shipping_method_router)
 app.include_router(order_router)
 app.include_router(payment_router)
 app.include_router(checkout_router)
+app.include_router(coupon_router)
+app.include_router(wishlist_router)

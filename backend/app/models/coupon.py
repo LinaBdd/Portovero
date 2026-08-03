@@ -1,9 +1,13 @@
+from datetime import datetime
+from decimal import Decimal
+
 from sqlalchemy import (
     Boolean,
     DateTime,
     Integer,
     Numeric,
     String,
+    func,
 )
 
 from sqlalchemy.orm import (
@@ -11,7 +15,6 @@ from sqlalchemy.orm import (
     mapped_column,
 )
 
-from datetime import datetime
 from app.database.core import Base
 
 
@@ -20,11 +23,19 @@ class Coupon(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
+        index=True,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
     )
 
     code: Mapped[str] = mapped_column(
         String(50),
         unique=True,
+        index=True,
+        nullable=False,
     )
 
     description: Mapped[str | None] = mapped_column(
@@ -32,17 +43,25 @@ class Coupon(Base):
         nullable=True,
     )
 
+    # fixed | percentage
     discount_type: Mapped[str] = mapped_column(
         String(20),
+        nullable=False,
     )
 
-    discount_value: Mapped[float] = mapped_column(
+    discount_value: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
+        nullable=False,
     )
 
-    minimum_amount: Mapped[float | None] = mapped_column(
+    minimum_amount: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2),
-        nullable=True
+        nullable=True,
+    )
+
+    maximum_discount: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2),
+        nullable=True,
     )
 
     usage_limit: Mapped[int | None] = mapped_column(
@@ -50,14 +69,23 @@ class Coupon(Base):
         nullable=True,
     )
 
+    usage_per_user: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        nullable=False,
+    )
+
     used_count: Mapped[int] = mapped_column(
         Integer,
         default=0,
+        nullable=False,
     )
 
     starts_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
+        nullable=False,
     )
+
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
@@ -66,4 +94,16 @@ class Coupon(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
     )

@@ -7,23 +7,17 @@ from pydantic import (
 
 
 class WishlistBase(BaseModel):
+    user_id: int
+
     product_id: int
 
 
 class WishlistCreate(WishlistBase):
-    user_id: int | None = None
-    session_id: str | None = None
-
-
-class WishlistUpdate(BaseModel):
     pass
 
 
 class WishlistRead(WishlistBase):
     id: int
-
-    user_id: int | None = None
-    session_id: str | None = None
 
     created_at: datetime
 
