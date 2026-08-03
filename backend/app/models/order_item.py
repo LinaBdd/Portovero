@@ -1,10 +1,11 @@
+from decimal import Decimal
+
 from sqlalchemy import (
     ForeignKey,
     Integer,
     Numeric,
     String,
 )
-
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -29,9 +30,12 @@ class OrderItem(Base):
         nullable=False,
     )
 
-    product_variant_id: Mapped[int] = mapped_column(
-        ForeignKey("product_variants.id"),
-        nullable=False,
+    product_variant_id: Mapped[int | None] = mapped_column(
+        ForeignKey(
+            "product_variants.id",
+            ondelete="SET NULL",
+        ),
+        nullable=True,
     )
 
     product_name: Mapped[str] = mapped_column(
@@ -49,17 +53,21 @@ class OrderItem(Base):
         nullable=False,
     )
 
+    product_image: Mapped[str | None] = mapped_column(
+        String(500),
+    )
+
     quantity: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
     )
 
-    unit_price: Mapped[float] = mapped_column(
+    unit_price: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         nullable=False,
     )
 
-    total_price: Mapped[float] = mapped_column(
+    total_price: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         nullable=False,
     )
@@ -71,4 +79,5 @@ class OrderItem(Base):
 
     variant = relationship(
         "ProductVariant",
+        passive_deletes=True,
     )

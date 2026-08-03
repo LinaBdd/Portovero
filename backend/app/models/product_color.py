@@ -1,4 +1,7 @@
-from sqlalchemy import ForeignKey
+from sqlalchemy import (
+    ForeignKey,
+    UniqueConstraint,
+)
 
 from sqlalchemy.orm import (
     Mapped,
@@ -11,6 +14,14 @@ from app.database.core import Base
 
 class ProductColor(Base):
     __tablename__ = "product_colors"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "color_id",
+            name="uq_product_color",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,

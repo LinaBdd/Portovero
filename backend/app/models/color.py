@@ -7,7 +7,10 @@ from app.database.core import Base
 class Color(Base):
     __tablename__ = "colors"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
 
     name: Mapped[str] = mapped_column(
         String(50),
@@ -25,7 +28,8 @@ class Color(Base):
         server_default=func.now(),
     )
 
-    variants = relationship(
-        "ProductVariant",
+    products = relationship(
+        "ProductColor",
         back_populates="color",
+        cascade="all, delete-orphan",
     )

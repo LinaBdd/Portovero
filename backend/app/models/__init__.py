@@ -24,3 +24,6 @@ from .order import Order
 from .order_item import OrderItem
 
 from .banner import Banner
+from .cart_item import CartItem
+from .commune import Commune
+from .payment import Payment

@@ -26,6 +26,7 @@ class ProductImage(Base):
             "product_colors.id",
             ondelete="CASCADE",
         ),
+        index=True,
         nullable=False,
     )
 

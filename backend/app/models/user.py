@@ -108,3 +108,10 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+
+    cart_items = relationship(
+    "CartItem",
+    back_populates="user",
+    cascade="all, delete-orphan",
+)

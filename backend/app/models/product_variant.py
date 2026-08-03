@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import (
     Boolean,
     ForeignKey,
@@ -20,6 +22,7 @@ class ProductVariant(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
+        index=True,
     )
 
     product_color_id: Mapped[int] = mapped_column(
@@ -38,26 +41,30 @@ class ProductVariant(Base):
     sku: Mapped[str] = mapped_column(
         String(100),
         unique=True,
+        index=True,
         nullable=False,
     )
 
-    price: Mapped[float] = mapped_column(
+    price: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         nullable=False,
     )
 
-    old_price: Mapped[float | None] = mapped_column(
+    old_price: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2),
+        nullable=True,
     )
 
     stock: Mapped[int] = mapped_column(
         Integer,
         default=0,
+        nullable=False,
     )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+        nullable=False,
     )
 
     product_color = relationship(

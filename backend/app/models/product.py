@@ -1,13 +1,31 @@
-from sqlalchemy import String, Text, Boolean, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from decimal import Decimal
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Numeric,
+    String,
+    Text,
+    func,
+)
+
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from app.database.core import Base
-from sqlalchemy import ForeignKey
+
 
 class Product(Base):
     __tablename__ = "products"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
 
     name: Mapped[str] = mapped_column(
         String(255),
@@ -30,15 +48,45 @@ class Product(Base):
         nullable=True,
     )
 
-    material: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
-    )
-
     gender: Mapped[str | None] = mapped_column(
         String(30),
         nullable=True,
     )
+
+
+
+    sku: Mapped[str] = mapped_column(
+        String(50),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+
+    base_price: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2),
+        nullable=False,
+    )
+
+    compare_at_price: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2),
+        nullable=True,
+    )
+
+    stock: Mapped[int] = mapped_column(
+        nullable=False,
+        default=0,
+    )
+
+    weight: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2),
+        nullable=True,
+    )
+
+    is_new: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+    )
+
 
     is_featured: Mapped[bool] = mapped_column(
         Boolean,
@@ -61,10 +109,14 @@ class Product(Base):
         onupdate=func.now(),
     )
 
-    variants = relationship(
-        "ProductVariant",
-        back_populates="product",
-        cascade="all, delete-orphan",
+    material_id: Mapped[int | None] = mapped_column(
+        ForeignKey("materials.id"),
+        nullable=True,
+    )
+
+    material = relationship(
+        "Material",
+        back_populates="products",
     )
 
     categories = relationship(
@@ -73,12 +125,22 @@ class Product(Base):
         cascade="all, delete-orphan",
     )
 
-    material_id: Mapped[int | None] = mapped_column(
-    ForeignKey("materials.id"),
-    nullable=True,
-    )  
+    colors = relationship(
+        "ProductColor",
+        back_populates="product",
+        cascade="all, delete-orphan",
+    )
 
-    material = relationship(
-        "Material",
-         back_populates="products",
+    
+
+    reviews = relationship(
+        "Review",
+        back_populates="product",
+        cascade="all, delete-orphan",
+    )
+
+    wishlist_items = relationship(
+        "Wishlist",
+        back_populates="product",
+        cascade="all, delete-orphan",
     )

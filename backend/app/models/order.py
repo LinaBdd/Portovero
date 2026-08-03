@@ -1,3 +1,6 @@
+from datetime import datetime
+from decimal import Decimal
+
 from sqlalchemy import (
     DateTime,
     ForeignKey,
@@ -6,7 +9,6 @@ from sqlalchemy import (
     Text,
     func,
 )
-
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -22,6 +24,8 @@ class Order(Base):
     id: Mapped[int] = mapped_column(
         primary_key=True,
     )
+
+    # ===== Customer =====
 
     user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"),
@@ -47,44 +51,95 @@ class Order(Base):
         String(255),
     )
 
+    # ===== Shipping address snapshot =====
+
     address: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
     )
 
-    city: Mapped[str] = mapped_column(
+    wilaya: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
+    )
+
+    commune: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    shipping_method: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    # ===== Prices =====
+
+    subtotal: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2),
+        nullable=False,
+    )
+
+    shipping_cost: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0,
+    )
+
+    discount: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2),
+        nullable=False,
+        default=0,
+    )
+
+    total: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2),
+        nullable=False,
+    )
+
+    # ===== Order =====
+
+    status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="pending",
+    )
+
+    payment_method: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    payment_status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="pending",
+    )
+
+    coupon_code: Mapped[str | None] = mapped_column(
+        String(50),
     )
 
     notes: Mapped[str | None] = mapped_column(
         Text,
     )
 
-    subtotal: Mapped[float] = mapped_column(
-        Numeric(10, 2),
-        nullable=False,
-    )
+    # ===== Dates =====
 
-    shipping_cost: Mapped[float] = mapped_column(
-        Numeric(10, 2),
-        nullable=False,
-    )
-
-    total: Mapped[float] = mapped_column(
-        Numeric(10, 2),
-        nullable=False,
-    )
-
-    status: Mapped[str] = mapped_column(
-        String(50),
-        default="pending",
-    )
-
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+        nullable=False,
     )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # ===== Relationships =====
 
     user = relationship(
         "User",
@@ -95,4 +150,11 @@ class Order(Base):
         "OrderItem",
         back_populates="order",
         cascade="all, delete-orphan",
+    )
+
+    payment = relationship(
+      "Payment",
+      back_populates="order",
+      uselist=False,
+      cascade="all, delete-orphan",
     )
