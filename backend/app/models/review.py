@@ -4,6 +4,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     Text,
+    UniqueConstraint,
     func,
 )
 
@@ -18,6 +19,14 @@ from app.database.core import Base
 
 class Review(Base):
     __tablename__ = "reviews"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "product_id",
+            name="uq_user_product_review",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -51,11 +60,18 @@ class Review(Base):
     is_visible: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+        nullable=False,
     )
 
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+    )
+
+    updated_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
     user = relationship(

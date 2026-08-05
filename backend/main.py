@@ -22,21 +22,16 @@ from app.routes.payment import router as payment_router
 from app.routes.checkout import router as checkout_router
 from app.routes.coupon import router as coupon_router
 from app.routes.wishlist import router as wishlist_router
+from app.routes.review import router as review_router
+from app.routes.admin import router as admin_router
+from app.routes.newsletter import router as newsletter_router
+from app.routes.notification import router as notification_router
+from app.routes.banner import router as banner_router
+
 
 app = FastAPI(
     title="Portovero API",
 )
-
-
-@app.get("/")
-def root():
-    return {
-        "message": "Portovero API running",
-    }
-
-
-
-
 
 
 app.include_router(auth_router)
@@ -59,3 +54,8 @@ app.include_router(payment_router)
 app.include_router(checkout_router)
 app.include_router(coupon_router)
 app.include_router(wishlist_router)
+app.include_router(review_router)
+app.include_router(newsletter_router)
+app.include_router(admin_router)    
+app.include_router(notification_router)
+app.include_router(banner_router)

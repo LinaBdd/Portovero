@@ -12,25 +12,23 @@ class NewsletterBase(BaseModel):
 
     phone: str | None = None
 
-    is_active: bool = True
-
 
 class NewsletterCreate(NewsletterBase):
     pass
 
 
 class NewsletterUpdate(BaseModel):
-    email: EmailStr | None = None
-
-    phone: str | None = None
-
-    is_active: bool | None = None
+    subscribed: bool
 
 
 class NewsletterRead(NewsletterBase):
     id: int
 
+    subscribed: bool
+
     created_at: datetime
+
+    updated_at: datetime
 
     model_config = ConfigDict(
         from_attributes=True,
