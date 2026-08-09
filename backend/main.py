@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database.session import engine
 from sqlalchemy import inspect
+from app.core.config import settings
 from app.routes.auth import router as auth_router
 from app.auth.admin.register import router as admin_register_router
 from app.routes.product import router as product_router
@@ -31,6 +33,22 @@ from app.routes.banner import router as banner_router
 
 app = FastAPI(
     title="Portovero API",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.FRONTEND_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
 )
 
 

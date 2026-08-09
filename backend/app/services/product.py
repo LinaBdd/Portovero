@@ -1,5 +1,5 @@
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from fastapi import HTTPException, status
 
 import re
@@ -10,6 +10,7 @@ from app.schemas.product import (
     ProductCreate,
     ProductUpdate,
 )
+from app.models.product_color import ProductColor
 
 
 def slugify(value: str) -> str:
@@ -104,6 +105,10 @@ def get_product_by_slug(
 
     product = (
         db.query(Product)
+        .options(
+            selectinload(Product.colors)
+            .selectinload(ProductColor.images)
+        )
         .filter(
             Product.slug == slug,
             Product.is_active == True,
