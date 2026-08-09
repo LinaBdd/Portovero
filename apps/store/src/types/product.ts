@@ -1,65 +1,194 @@
-export type ProductCategory =
-  | "shirts"
-  | "tshirts"
-  | "pants"
-  | "hoodies"
-  | "jackets"
-  | "shoes"
-  | "accessories";
-
-export type ProductColor =
-  | "Black"
-  | "White"
-  | "Beige"
-  | "Navy"
-  | "Green"
-  | "Brown"
-  | "Grey";
-
-export type ProductSize =
-  | "XS"
-  | "S"
-  | "M"
-  | "L"
-  | "XL"
-  | "XXL";
-
 export interface Product {
+  // =========================
+  // API fields
+  // =========================
+
   id: string;
 
-  slug: string;
-
   name: string;
+  slug: string;
 
   description: string;
 
-  price: number;
+  base_price: string;
+  compare_at_price: string | null;
 
-  oldPrice?: number;
+  stock: number;
+  weight: string | null;
+
+  is_active: boolean;
+  is_featured: boolean;
+  is_new: boolean;
+
+  sku: string;
+
+  created_at: string;
+  updated_at: string;
+
+  // =========================
+  // Product relations
+  // =========================
+
+  colors?: ProductColor[];
+
+  images?: string[];
+
+  sizes?: Size[];
+
+  // =========================
+  // Frontend fields
+  // =========================
+
+  rating?: number;
+
+  reviews?: number;
+
+  featured?: boolean;
+
+  bestseller?: boolean;
+
+  newArrival?: boolean;
+
+  gender?: string;
+
+  category?: string;
+
+  collection?: string;
+
+  tags?: string[];
+}
+
+export interface ProductColor {
+  id: number;
+
+  product_id: number;
+  color_id: number;
+
+  color?: Color;
+
+  images?: ProductImage[];
+
+  variants?: ProductVariant[];
+}
+
+export interface ProductImage {
+  id: number;
+
+  product_color_id: number;
+
+  image_url: string;
+
+  alt?: string | null;
+
+  position?: number | null;
+
+  is_primary?: boolean;
+}
+
+export interface Color {
+  id: number;
+
+  name: string;
+
+  hex_code: string;
+}
+
+export interface ProductVariant {
+  id: number;
+
+  product_color_id: number;
+  size_id: number;
+
+  sku: string;
 
   stock: number;
 
-  rating: number;
+  price?: string | number | null;
 
-  reviews: number;
+  size?: Size;
+}
 
-  featured: boolean;
+export interface Size {
+  id: number;
 
-  bestseller: boolean;
+  name: string;
 
-  newArrival: boolean;
+  display_order: number;
+}
 
-  gender: string;
+export interface ProductImageRead {
+  id: number;
+  product_color_id: number;
+  image_url: string;
+  alt?: string | null;
+  position?: number | null;
+  is_primary: boolean;
+}
 
-  category: string;
+export interface ColorRead {
+  id: number;
+  name: string;
+  hex_code: string;
+}
 
-  collection: string;
+export interface ProductVariantRead {
+  id: number;
+  product_color_id: number;
+  size_id: number;
+  sku: string;
+  stock: number;
+  price: string | null;
+  size?: SizeRead;
+}
 
-  colors: string[];
+export interface SizeRead {
+  id: number;
+  name: string;
+  display_order: number;
+}
 
-  sizes: string[];
+export interface ProductColorRead {
+  id: number;
+  product_id: number;
+  color_id: number;
 
-  images: string[];
+  color?: ColorRead;
 
-  tags: string[];
+  images: ProductImageRead[];
+
+  variants: ProductVariantRead[];
+}
+
+export interface ProductRead {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+
+  base_price: string;
+  compare_at_price: string | null;
+
+  stock: number;
+  weight: string | null;
+
+  is_active: boolean;
+  is_featured: boolean;
+  is_new: boolean;
+
+  sku: string;
+
+  created_at: string;
+  updated_at: string;
+
+  colors: ProductColorRead[];
+}
+
+export interface ProductRating {
+  average_rating: number;
+  total_reviews: number;
+}
+
+export interface ProductColorList {
+  total: number;
+  items: ProductColorRead[];
 }

@@ -2,9 +2,11 @@ import { ProductCard } from "../../product";
 import { Section } from "../../ui/section";
 import { H2, Lead } from "../../ui/typography";
 
-import { bestSellers } from "./data";
+import { getFeaturedProductsForStore } from "../../../lib/api/products";
 
-export function BestSellers() {
+export async function BestSellers() {
+  const bestSellers = await getFeaturedProductsForStore(4);
+
   return (
     <Section>
 

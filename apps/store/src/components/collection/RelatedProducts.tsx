@@ -1,14 +1,16 @@
-import { products } from "../../data/products";
 import { Product } from "../../types/product";
 import { ProductCard } from "../product/ProductCard";
+import { getProductsForStore } from "../../lib/api/products";
 
 type Props = {
   currentProduct: Product;
 };
 
-export function RelatedProducts({
+export async function RelatedProducts({
   currentProduct,
 }: Props) {
+  const products = await getProductsForStore();
+
   // Même genre + même catégorie
   let related = products.filter(
     (p) =>

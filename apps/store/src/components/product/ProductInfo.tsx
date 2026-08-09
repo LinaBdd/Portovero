@@ -1,8 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Product } from "../../types/product";
+
+import type {
+  Product,
+  ProductColor,
+  ProductVariant,
+} from "../../types/product";
+
 import { useCart } from "../../store/cart";
 
 import { Button } from "../ui/button";
@@ -17,97 +23,326 @@ type Props = {
 export function ProductInfo({ product }: Props) {
   const { add } = useCart();
 
+  const [selectedColor, setSelectedColor] =
+    useState<ProductColor | null>(
+      product.colors?.[0] ?? null
+    );
+
+  const [selectedVariant, setSelectedVariant] =
+    useState<ProductVariant | null>(
+      product.colors?.[0]?.variants?.[0] ?? null
+    );
+
   const [quantity, setQuantity] = useState(1);
 
-  const discount =
-    product.oldPrice && product.oldPrice > product.price
-      ? Math.round(
-          ((product.oldPrice - product.price) / product.oldPrice) * 100
-        )
+  /*
+   * =========================
+   * CURRENT VARIANTS
+   * =========================
+   */
+
+  const variants =
+    selectedColor?.variants ?? [];
+
+  /*
+   * =========================
+   * AVAILABLE SIZES
+   * =========================
+   */
+
+  const sizes = useMemo(() => {
+    return variants
+      .filter((variant) => variant.size)
+      .map((variant) => variant.size!);
+  }, [variants]);
+
+  /*
+   * =========================
+   * PRICE
+   * =========================
+   */
+
+  const price = Number(product.base_price);
+
+  const oldPrice =
+    product.compare_at_price !== null
+      ? Number(product.compare_at_price)
       : null;
 
-  const handleAddToCart = () => {
-   add(product, quantity);
+  const hasSale =
+    oldPrice !== null &&
+    oldPrice > price;
 
-   toast.success("Produit ajouté au panier", {
-    description: product.name,
-   });
+  const discount = hasSale
+    ? Math.round(
+        ((oldPrice! - price) / oldPrice!) * 100
+      )
+    : null;
+
+  /*
+   * =========================
+   * STOCK
+   * =========================
+   */
+
+  const currentStock =
+    selectedVariant?.stock ??
+    product.stock;
+
+  const isOutOfStock =
+    currentStock <= 0;
+
+  /*
+   * =========================
+   * COLOR CHANGE
+   * =========================
+   */
+
+  const handleColorChange = (
+    color: ProductColor
+  ) => {
+    setSelectedColor(color);
+
+    /*
+     * When the color changes,
+     * reset the selected variant
+     * to the first variant of that color.
+     */
+
+    const firstVariant =
+      color.variants?.[0] ?? null;
+
+    setSelectedVariant(firstVariant);
+
+    /*
+     * Reset quantity because
+     * stock may be different.
+     */
+
+    setQuantity(1);
+  };
+
+  /*
+   * =========================
+   * SIZE CHANGE
+   * =========================
+   */
+
+  const handleSizeChange = (
+    variant: ProductVariant
+  ) => {
+    setSelectedVariant(variant);
+
+    setQuantity(1);
+  };
+
+  /*
+   * =========================
+   * QUANTITY CHANGE
+   * =========================
+   */
+
+  const handleQuantityChange = (
+    value: number
+  ) => {
+    const max =
+      selectedVariant?.stock ??
+      product.stock;
+
+    setQuantity(
+      Math.max(
+        1,
+        Math.min(value, max)
+      )
+    );
+  };
+
+  /*
+   * =========================
+   * ADD TO CART
+   * =========================
+   */
+
+  const handleAddToCart = () => {
+    if (!selectedColor) {
+      toast.error(
+        "Veuillez sélectionner une couleur."
+      );
+
+      return;
+    }
+
+    if (
+      variants.length > 0 &&
+      !selectedVariant
+    ) {
+      toast.error(
+        "Veuillez sélectionner une taille."
+      );
+
+      return;
+    }
+
+    if (currentStock <= 0) {
+      toast.error(
+        "Ce produit est en rupture de stock."
+      );
+
+      return;
+    }
+
+    if (quantity > currentStock) {
+      toast.error(
+        `Stock disponible : ${currentStock}`
+      );
+
+      return;
+    }
+
+    /*
+     * TEMPORARY:
+     * We will adapt the cart store
+     * to ProductVariant in the next step.
+     */
+
+    if (!selectedVariant) {
+     toast.error("Veuillez sélectionner une taille.");
+     return;
+    }
+
+    add(product, selectedColor, selectedVariant, quantity);
+
+    toast.success(
+      "Produit ajouté au panier",
+      {
+        description:
+          product.name,
+      }
+    );
   };
 
   return (
     <div className="space-y-8">
-      {/* Product Info */}
+
+      {/* =========================
+          PRODUCT INFO
+      ========================== */}
 
       <div>
-        <p className="uppercase tracking-[0.25em] text-[#C8A96A]">
-          {product.category} / {product.gender}
-        </p>
+
+        {product.is_new && (
+          <p className="uppercase tracking-[0.25em] text-[#C8A96A]">
+            Nouveau
+          </p>
+        )}
 
         <h1 className="mt-3 text-5xl font-serif">
           {product.name}
         </h1>
 
-        <div className="mt-4 flex items-center gap-3">
-          <span className="text-lg font-semibold">
-            ⭐ {product.rating}
-          </span>
-
-          <span className="text-neutral-500">
-            ({product.reviews} avis)
-          </span>
-        </div>
+        {product.sku && (
+          <p className="mt-3 text-xs uppercase tracking-widest text-neutral-400">
+            SKU : {product.sku}
+          </p>
+        )}
 
         <p className="mt-6 leading-8 text-neutral-600">
           {product.description}
         </p>
+
       </div>
 
-      {/* Price */}
+      {/* =========================
+          PRICE
+      ========================== */}
 
       <div className="flex items-center gap-4">
+
         <span className="text-3xl font-bold">
-          {product.price.toLocaleString("fr-FR")} DA
+          {price.toLocaleString("fr-DZ")} DA
         </span>
 
-        {product.oldPrice && (
-          <span className="text-lg text-neutral-400 line-through">
-            {product.oldPrice.toLocaleString("fr-FR")} DA
-          </span>
+        {hasSale && (
+          <>
+            <span className="text-lg text-neutral-400 line-through">
+              {oldPrice!.toLocaleString(
+                "fr-DZ"
+              )}{" "}
+              DA
+            </span>
+
+            <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-semibold text-white">
+              -{discount}%
+            </span>
+          </>
         )}
 
-        {discount && (
-          <span className="rounded-full bg-red-600 px-3 py-1 text-sm font-semibold text-white">
-            -{discount}%
-          </span>
-        )}
       </div>
 
-      {/* Options */}
+      {/* =========================
+          COLORS
+      ========================== */}
 
-      <ColorSelector colors={product.colors} />
+      {product.colors &&
+        product.colors.length > 0 && (
+          <ColorSelector
+            colors={product.colors}
+            onChange={handleColorChange}
+          />
+        )}
 
-      <SizeSelector sizes={product.sizes} />
+      {/* =========================
+          SIZES
+      ========================== */}
+
+      {sizes.length > 0 && (
+        <SizeSelector
+          sizes={sizes}
+          variants={variants}
+          selectedVariant={selectedVariant}
+          onChange={handleSizeChange}
+        />
+      )}
+
+      {/* =========================
+          QUANTITY
+      ========================== */}
 
       <QuantitySelector
         quantity={quantity}
-        onChange={setQuantity}
+        onChange={handleQuantityChange}
       />
 
-      {/* Stock */}
+      {/* =========================
+          STOCK
+      ========================== */}
 
-      <p className="text-sm font-medium text-green-700">
-        ✓ {product.stock} articles en stock
-      </p>
+      {isOutOfStock ? (
+        <p className="text-sm font-medium text-red-600">
+          ✕ Rupture de stock
+        </p>
+      ) : (
+        <p className="text-sm font-medium text-green-700">
+          ✓ {currentStock} article
+          {currentStock > 1 ? "s" : ""} en stock
+        </p>
+      )}
 
-      {/* Add To Cart */}
+      {/* =========================
+          ADD TO CART
+      ========================== */}
 
       <Button
         variant="primary"
         className="h-14 w-full text-lg"
         onClick={handleAddToCart}
+        disabled={isOutOfStock}
       >
-        Ajouter au panier
+        {isOutOfStock
+          ? "Rupture de stock"
+          : "Ajouter au panier"}
       </Button>
+
     </div>
   );
 }

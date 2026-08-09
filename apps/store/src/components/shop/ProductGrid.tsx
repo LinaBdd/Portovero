@@ -1,11 +1,13 @@
-import { products } from "../../data/products";
+import { getProductsForStore } from "../../lib/api/products";
 import { ProductCard } from "../product";
 
-export function ProductGrid() {
+export async function ProductGrid() {
+  const items = await getProductsForStore();
+
   return (
     <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
 
-      {products.map((product) => (
+      {items.map((product) => (
 
         <ProductCard
           key={product.id}

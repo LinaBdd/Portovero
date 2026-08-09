@@ -3,20 +3,19 @@
 import { useCart } from "../../store/cart";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { createAddress } from "../../lib/api/address";
+import { createCheckout } from "../../lib/api/checkout";
 
 export default function CheckoutPage() {
   const router = useRouter();
 
   const { items, clear } = useCart();
 
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
+  // TEMPORAIRE :
+  // Mets ici l'id d'un utilisateur existant dans ton backend.
+  const USER_ID = 1;
 
-  const shipping = subtotal > 30000 ? 0 : 600;
-
-  const total = subtotal + shipping;
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -30,6 +29,19 @@ export default function CheckoutPage() {
     delivery: "home",
   });
 
+  const subtotal = items.reduce((sum, item) => {
+    const price =
+      item.variant.price !== null &&
+      item.variant.price !== undefined
+        ? Number(item.variant.price)
+        : Number(item.product.base_price);
+
+    return sum + price * item.quantity;
+  }, 0);
+
+  const shipping = subtotal > 30000 ? 0 : 600;
+  const total = subtotal + shipping;
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) {
@@ -39,15 +51,102 @@ export default function CheckoutPage() {
     });
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    console.log(form);
-    console.log(items);
+    if (items.length === 0) {
+      alert("Votre panier est vide.");
+      return;
+    }
 
-    clear();
+    try {
+      setLoading(true);
 
-    router.push("/checkout/success");
+      /*
+       * =====================================
+       * 1. CREER L'ADRESSE
+       * =====================================
+       *
+       * Pour l'instant on utilise :
+       * - wilaya_id = 21 (Skikda)
+       *
+       * IMPORTANT :
+       * commune_id doit correspondre à une commune
+       * existante dans ta DB.
+       *
+       * Change cette valeur avec un vrai commune_id.
+       */
+
+      const address = await createAddress(USER_ID, {
+        label: "Adresse de livraison",
+
+        first_name: form.firstName,
+
+        last_name: form.lastName,
+
+        phone: form.phone,
+
+        address: form.address,
+
+        wilaya_id: 21,
+
+        commune_id: 1,
+
+        postal_code: form.postalCode || null,
+
+        is_default: true,
+      });
+
+      /*
+       * =====================================
+       * 2. CREER LA COMMANDE
+       * =====================================
+       */
+
+      const order = await createCheckout({
+        user_id: USER_ID,
+
+        address_id: address.id,
+
+        /*
+         * TEMPORAIRE :
+         * on utilise le shipping method 1.
+         */
+        shipping_method_id: 1,
+
+        payment_method: "cash_on_delivery",
+
+        coupon_code: null,
+
+        notes: null,
+      });
+
+      console.log("COMMANDE CRÉÉE :", order);
+
+      /*
+       * =====================================
+       * 3. VIDER LE PANIER
+       * =====================================
+       */
+
+      clear();
+
+      /*
+       * =====================================
+       * 4. PAGE SUCCESS
+       * =====================================
+       */
+
+      router.push("/checkout/success");
+    } catch (error) {
+      console.error("CHECKOUT ERROR :", error);
+
+      alert(
+        "Impossible de créer la commande. Vérifie les informations et réessaie."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -59,10 +158,18 @@ export default function CheckoutPage() {
 
       <div className="grid gap-16 lg:grid-cols-[2fr_1fr]">
 
+        {/* ================================
+            FORMULAIRE
+        ================================= */}
+
         <form
           onSubmit={handleSubmit}
           className="space-y-10"
         >
+
+          {/* ================================
+              INFORMATIONS PERSONNELLES
+          ================================= */}
 
           <section>
 
@@ -101,6 +208,7 @@ export default function CheckoutPage() {
 
               <input
                 name="email"
+                type="email"
                 placeholder="Email (optionnel)"
                 value={form.email}
                 onChange={handleChange}
@@ -110,6 +218,10 @@ export default function CheckoutPage() {
             </div>
 
           </section>
+
+          {/* ================================
+              ADRESSE
+          ================================= */}
 
           <section>
 
@@ -158,6 +270,10 @@ export default function CheckoutPage() {
 
           </section>
 
+          {/* ================================
+              LIVRAISON
+          ================================= */}
+
           <section>
 
             <h2 className="mb-6 text-2xl font-semibold">
@@ -170,6 +286,7 @@ export default function CheckoutPage() {
               onChange={handleChange}
               className="w-full rounded-xl border p-4"
             >
+
               <option value="home">
                 Livraison à domicile
               </option>
@@ -182,15 +299,29 @@ export default function CheckoutPage() {
 
           </section>
 
+          {/* ================================
+              BOUTON
+          ================================= */}
+
           <button
-            className="w-full rounded-full bg-[#0F2D52] py-4 text-lg font-semibold text-white"
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-full bg-[#0F2D52] py-4 text-lg font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Confirmer la commande
+
+            {loading
+              ? "Création de la commande..."
+              : "Confirmer la commande"}
+
           </button>
 
         </form>
 
-        <aside className="rounded-3xl border bg-white p-8 shadow-sm">
+        {/* ================================
+            RESUME
+        ================================= */}
+
+        <aside className="h-fit rounded-3xl border bg-white p-8 shadow-sm">
 
           <h2 className="mb-6 text-2xl font-semibold">
             Résumé
@@ -198,23 +329,35 @@ export default function CheckoutPage() {
 
           <div className="space-y-4">
 
-            {items.map((item) => (
+            {items.map((item) => {
 
-              <div
-                key={item.product.id}
-                className="flex justify-between"
-              >
-                <span>
-                  {item.product.name} × {item.quantity}
-                </span>
+              const price =
+                item.variant.price !== null &&
+                item.variant.price !== undefined
+                  ? Number(item.variant.price)
+                  : Number(item.product.base_price);
 
-                <span>
-                  {(item.product.price * item.quantity).toLocaleString("fr-FR")} DA
-                </span>
+              return (
+                <div
+                  key={`${item.product.id}-${item.variant.id}`}
+                  className="flex justify-between gap-4"
+                >
 
-              </div>
+                  <span>
+                    {item.product.name} × {item.quantity}
+                  </span>
 
-            ))}
+                  <span className="whitespace-nowrap">
+                    {(price * item.quantity).toLocaleString(
+                      "fr-FR"
+                    )}{" "}
+                    DA
+                  </span>
+
+                </div>
+              );
+
+            })}
 
           </div>
 
@@ -224,21 +367,36 @@ export default function CheckoutPage() {
 
             <div className="flex justify-between">
               <span>Sous-total</span>
-              <span>{subtotal.toLocaleString("fr-FR")} DA</span>
+
+              <span>
+                {subtotal.toLocaleString("fr-FR")} DA
+              </span>
             </div>
 
             <div className="flex justify-between">
-              <span>Livraison</span>
+
+              <span>
+                Livraison
+              </span>
+
               <span>
                 {shipping === 0
                   ? "Gratuite"
                   : `${shipping} DA`}
               </span>
+
             </div>
 
             <div className="flex justify-between text-xl font-bold">
-              <span>Total</span>
-              <span>{total.toLocaleString("fr-FR")} DA</span>
+
+              <span>
+                Total
+              </span>
+
+              <span>
+                {total.toLocaleString("fr-FR")} DA
+              </span>
+
             </div>
 
           </div>

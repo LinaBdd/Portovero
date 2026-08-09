@@ -1,41 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import type {
+  ProductVariant,
+  Size,
+} from "../../types/product";
 
 type Props = {
-  sizes: string[];
+  sizes: Size[];
+  selectedVariant: ProductVariant | null;
+  onChange: (variant: ProductVariant) => void;
+  variants: ProductVariant[];
 };
 
-export function SizeSelector({ sizes }: Props) {
-  const [selected, setSelected] = useState(sizes[0]);
+export function SizeSelector({
+  sizes,
+  selectedVariant,
+  onChange,
+  variants,
+}: Props) {
+  if (!sizes.length) {
+    return null;
+  }
 
   return (
     <div>
-
       <p className="mb-4 font-medium">
-        Size
+        Taille
       </p>
 
       <div className="flex flex-wrap gap-3">
+        {sizes.map((size) => {
+          const variant = variants.find(
+            (item) => item.size_id === size.id
+          );
 
-        {sizes.map((size) => (
+          if (!variant) {
+            return null;
+          }
 
-          <button
-            key={size}
-            onClick={() => setSelected(size)}
-            className={`h-12 w-12 rounded-full border transition ${
-              selected === size
-                ? "bg-black text-white"
-                : "hover:bg-neutral-100"
-            }`}
-          >
-            {size}
-          </button>
+          const isSelected =
+            selectedVariant?.id === variant.id;
 
-        ))}
+          const isOutOfStock =
+            variant.stock <= 0;
 
+          return (
+            <button
+              key={size.id}
+              type="button"
+              disabled={isOutOfStock}
+              onClick={() => onChange(variant)}
+              className={`
+                min-w-14
+                rounded-lg
+                border
+                px-4
+                py-3
+                text-sm
+                font-medium
+                transition
+
+                ${
+                  isSelected
+                    ? "border-black bg-black text-white"
+                    : "border-neutral-300 bg-white hover:border-black"
+                }
+
+                ${
+                  isOutOfStock
+                    ? "cursor-not-allowed opacity-40 line-through"
+                    : ""
+                }
+              `}
+            >
+              {size.name}
+            </button>
+          );
+        })}
       </div>
-
     </div>
   );
 }

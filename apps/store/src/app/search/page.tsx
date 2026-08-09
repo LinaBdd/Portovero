@@ -1,27 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { products } from "../../data/products";
 import { ProductCard } from "../../components/product/ProductCard";
+import { searchProductsForStore } from "../../lib/api/products";
+import { Product } from "../../types/product";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredProducts = useMemo(() => {
-    const value = query.toLowerCase().trim();
+  useEffect(() => {
+    let cancelled = false;
 
-    if (!value) return products;
+    async function runSearch() {
+      setLoading(true);
 
-    return products.filter((product) =>
-      product.name.toLowerCase().includes(value) ||
-      product.category.toLowerCase().includes(value) ||
-      product.gender.toLowerCase().includes(value) ||
-      product.description.toLowerCase().includes(value) ||
-      product.tags.some((tag) =>
-        tag.toLowerCase().includes(value)
-      )
-    );
+      const products = await searchProductsForStore(query);
+
+      if (!cancelled) {
+        setResults(products);
+        setLoading(false);
+      }
+    }
+
+    const timeout = setTimeout(runSearch, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [query]);
 
   return (
@@ -40,11 +49,11 @@ export default function SearchPage() {
       />
 
       <p className="mb-8 text-neutral-500">
-        {filteredProducts.length} product(s) found
+        {loading ? "Searching..." : `${results.length} product(s) found`}
       </p>
 
       <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-        {filteredProducts.map((product) => (
+        {results.map((product) => (
           <ProductCard
             key={product.id}
             product={product}
@@ -52,7 +61,7 @@ export default function SearchPage() {
         ))}
       </div>
 
-      {filteredProducts.length === 0 && (
+      {!loading && results.length === 0 && (
         <div className="mt-20 text-center text-neutral-500">
           <h2 className="mb-3 text-2xl font-semibold">
             No products found

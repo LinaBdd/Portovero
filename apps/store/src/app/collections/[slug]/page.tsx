@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 
-import { products } from "../../../data/products";
 import { ProductCard } from "../../../components/product";
 import { Section } from "../../../components/ui/section";
 import { H1 } from "../../../components/ui/typography";
+import { getProductsForStore } from "../../../lib/api/products";
 
 type Props = {
   params: Promise<{
@@ -16,6 +16,8 @@ export default async function CollectionPage({
 }: Props) {
 
   const { slug } = await params;
+
+  const products = await getProductsForStore();
 
   const collectionProducts = products.filter(
     (product) => product.gender === slug

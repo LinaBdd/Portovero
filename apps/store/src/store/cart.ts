@@ -3,23 +3,34 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { Product } from "../types/product";
+import type {
+  Product,
+  ProductColor,
+  ProductVariant,
+} from "../types/product";
 
 export interface CartItem {
   product: Product;
+  color: ProductColor;
+  variant: ProductVariant;
   quantity: number;
 }
 
 interface CartStore {
   items: CartItem[];
 
-  add: (product: Product, quantity?: number) => void;
+  add: (
+    product: Product,
+    color: ProductColor,
+    variant: ProductVariant,
+    quantity?: number
+  ) => void;
 
-  remove: (id: string) => void;
+  remove: (itemId: string) => void;
 
-  increase: (id: string) => void;
+  increase: (itemId: string) => void;
 
-  decrease: (id: string) => void;
+  decrease: (itemId: string) => void;
 
   clear: () => void;
 }
@@ -29,19 +40,34 @@ export const useCart = create<CartStore>()(
     (set) => ({
       items: [],
 
-      add: (product, quantity = 1) =>
+      // =========================
+      // ADD
+      // =========================
+
+      add: (
+        product,
+        color,
+        variant,
+        quantity = 1
+      ) =>
         set((state) => {
+          const itemId = `${product.id}-${variant.id}`;
+
           const existing = state.items.find(
-            (item) => item.product.id === product.id
+            (item) =>
+              `${item.product.id}-${item.variant.id}` ===
+              itemId
           );
 
           if (existing) {
             return {
               items: state.items.map((item) =>
-                item.product.id === product.id
+                `${item.product.id}-${item.variant.id}` ===
+                itemId
                   ? {
                       ...item,
-                      quantity: item.quantity + quantity,
+                      quantity:
+                        item.quantity + quantity,
                     }
                   : item
               ),
@@ -53,50 +79,85 @@ export const useCart = create<CartStore>()(
               ...state.items,
               {
                 product,
+                color,
+                variant,
                 quantity,
               },
             ],
           };
         }),
 
-      remove: (id) =>
+      // =========================
+      // REMOVE
+      // =========================
+
+      remove: (itemId) =>
         set((state) => ({
           items: state.items.filter(
-            (item) => item.product.id !== id
+            (item) =>
+              `${item.product.id}-${item.variant.id}` !==
+              itemId
           ),
         })),
 
-      increase: (id) =>
+      // =========================
+      // INCREASE
+      // =========================
+
+      increase: (itemId) =>
         set((state) => ({
-          items: state.items.map((item) =>
-            item.product.id === id
-              ? {
-                  ...item,
-                  quantity: item.quantity + 1,
-                }
-              : item
-          ),
+          items: state.items.map((item) => {
+            const currentId = `${item.product.id}-${item.variant.id}`;
+
+            if (currentId !== itemId) {
+              return item;
+            }
+
+            if (item.quantity >= item.variant.stock) {
+              return item;
+            }
+
+            return {
+              ...item,
+              quantity: item.quantity + 1,
+            };
+          }),
         })),
 
-      decrease: (id) =>
+      // =========================
+      // DECREASE
+      // =========================
+
+      decrease: (itemId) =>
         set((state) => ({
           items: state.items
-            .map((item) =>
-              item.product.id === id
-                ? {
-                    ...item,
-                    quantity: item.quantity - 1,
-                  }
-                : item
-            )
-            .filter((item) => item.quantity > 0),
+            .map((item) => {
+              const currentId = `${item.product.id}-${item.variant.id}`;
+
+              if (currentId !== itemId) {
+                return item;
+              }
+
+              return {
+                ...item,
+                quantity: item.quantity - 1,
+              };
+            })
+            .filter(
+              (item) => item.quantity > 0
+            ),
         })),
+
+      // =========================
+      // CLEAR
+      // =========================
 
       clear: () =>
         set({
           items: [],
         }),
     }),
+
     {
       name: "portovero-cart",
     }
