@@ -9,6 +9,7 @@ from app.models.product import Product
 from app.schemas.product import (
     ProductCreate,
     ProductUpdate,
+    
 )
 from app.models.product_color import ProductColor
 
@@ -279,3 +280,42 @@ def delete_product(
 
     db.delete(product)
     db.commit()
+
+def filter_products(
+    db: Session,
+    gender: str | None = None,
+    skip: int = 0,
+    limit: int = 20,
+) -> dict:
+
+    query = (
+        db.query(Product)
+        .filter(Product.is_active == True)
+    )
+
+    # =========================
+    # FILTER BY GENDER
+    # =========================
+
+    if gender:
+        query = query.filter(
+            Product.gender.ilike(gender)
+        )
+
+    # =========================
+    # PAGINATION
+    # =========================
+
+    total = query.count()
+
+    products = (
+        query
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "total": total,
+        "items": products,
+    }

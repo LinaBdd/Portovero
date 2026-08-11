@@ -31,6 +31,8 @@ class ProductBase(BaseModel):
         ge=0
     )
 
+    gender: str | None = None
+
     is_active: bool = True
     is_featured: bool = False
     is_new: bool = False

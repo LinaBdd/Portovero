@@ -18,6 +18,7 @@ from app.schemas.product import (
 
 from app.services.product import (
     create_product,
+    filter_products,
     get_product,
     get_product_by_slug,
     get_products,
@@ -38,15 +39,11 @@ router = APIRouter(
     tags=["Products"],
 )
 
+# =========================
+# PUBLIC ROUTES
+# =========================
 
-# -------------------------
-# Public routes
-# -------------------------
-
-@router.get(
-    "/list",
-    response_model=ProductList,
-)
+@router.get("/list", response_model=ProductList)
 def list_products(
     skip: int = 0,
     limit: int = Query(20, le=100),
@@ -59,10 +56,7 @@ def list_products(
     )
 
 
-@router.get(
-    "/featured",
-    response_model=list[ProductRead],
-)
+@router.get("/featured", response_model=list[ProductRead])
 def featured_products(
     limit: int = Query(8, le=20),
     db: Session = Depends(get_db),
@@ -73,10 +67,7 @@ def featured_products(
     )
 
 
-@router.get(
-    "/new",
-    response_model=list[ProductRead],
-)
+@router.get("/new", response_model=list[ProductRead])
 def new_products(
     limit: int = Query(8, le=20),
     db: Session = Depends(get_db),
@@ -87,10 +78,7 @@ def new_products(
     )
 
 
-@router.get(
-    "/search",
-    response_model=ProductList,
-)
+@router.get("/search", response_model=ProductList)
 def search(
     q: str,
     skip: int = 0,
@@ -105,10 +93,25 @@ def search(
     )
 
 
-@router.get(
-    "/{slug}",
-    response_model=ProductRead,
-)
+# IMPORTANT :
+# /filter AVANT /{slug}
+@router.get("/filter", response_model=ProductList)
+def filter_products_route(
+    gender: str | None = None,
+    skip: int = 0,
+    limit: int = Query(20, le=100),
+    db: Session = Depends(get_db),
+):
+    return filter_products(
+        db=db,
+        gender=gender,
+        skip=skip,
+        limit=limit,
+    )
+
+
+# /{slug} TOUJOURS EN DERNIER
+@router.get("/{slug}", response_model=ProductRead)
 def product_details(
     slug: str,
     db: Session = Depends(get_db),
@@ -119,9 +122,9 @@ def product_details(
     )
 
 
-# -------------------------
-# Admin routes
-# -------------------------
+# =========================
+# ADMIN ROUTES
+# =========================
 
 @router.post(
     "/create",
@@ -139,10 +142,7 @@ def create(
     )
 
 
-@router.patch(
-    "/{product_id}",
-    response_model=ProductRead,
-)
+@router.patch("/{product_id}", response_model=ProductRead)
 def update(
     product_id: int,
     data: ProductUpdate,
@@ -156,10 +156,7 @@ def update(
     )
 
 
-@router.patch(
-    "/{product_id}/stock",
-    response_model=ProductRead,
-)
+@router.patch("/{product_id}/stock", response_model=ProductRead)
 def decrease_stock(
     product_id: int,
     quantity: int,
@@ -186,4 +183,5 @@ def delete(
         db=db,
         product_id=product_id,
     )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
