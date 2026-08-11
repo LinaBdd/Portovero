@@ -12,9 +12,6 @@ export interface ProductColor {
   };
 }
 
-/**
- * Get all colors associated with a product
- */
 export const getProductColors = async (
   productId: number
 ): Promise<ProductColor[]> => {
@@ -22,12 +19,9 @@ export const getProductColors = async (
     `/product-colors/product/${productId}`
   );
 
-  return response.data;
+  return response.data.items;
 };
 
-/**
- * Get a single product color
- */
 export const getProductColor = async (
   productColorId: number
 ): Promise<ProductColor> => {
@@ -38,9 +32,6 @@ export const getProductColor = async (
   return response.data;
 };
 
-/**
- * Create a product color
- */
 export const createProductColor = async (data: {
   product_id: number;
   color_id: number;
@@ -53,9 +44,6 @@ export const createProductColor = async (data: {
   return response.data;
 };
 
-/**
- * Update a product color
- */
 export const updateProductColor = async (
   productColorId: number,
   data: {
@@ -71,9 +59,6 @@ export const updateProductColor = async (
   return response.data;
 };
 
-/**
- * Delete a product color
- */
 export const deleteProductColor = async (
   productColorId: number
 ): Promise<void> => {

@@ -1,20 +1,14 @@
 export interface Product {
-  // =========================
-  // API fields
-  // =========================
-
   id: string;
-
   name: string;
   slug: string;
-
   description: string;
 
-  base_price: string;
-  compare_at_price: string | null;
+  base_price: number;
+  compare_at_price: number | null;
 
   stock: number;
-  weight: string | null;
+  weight: number | null;
 
   is_active: boolean;
   is_featured: boolean;
@@ -25,39 +19,21 @@ export interface Product {
   created_at: string;
   updated_at: string;
 
-  // =========================
-  // Product relations
-  // =========================
-
   colors?: ProductColor[];
-
   images?: string[];
-
   sizes?: Size[];
 
-  // =========================
-  // Frontend fields
-  // =========================
-
   rating?: number;
-
   reviews?: number;
-
   featured?: boolean;
-
   bestseller?: boolean;
-
   newArrival?: boolean;
 
   gender?: string;
-
   category?: string;
-
   collection?: string;
-
   tags?: string[];
 }
-
 export interface ProductColor {
   id: number;
 
@@ -182,7 +158,6 @@ export interface ProductRead {
 
   colors: ProductColorRead[];
 }
-
 export interface ProductRating {
   average_rating: number;
   total_reviews: number;

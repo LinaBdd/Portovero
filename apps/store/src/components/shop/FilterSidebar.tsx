@@ -1,97 +1,135 @@
 "use client";
 
-import { useState } from "react";
 import { Checkbox } from "../ui/checkbox";
 
-export function FilterSidebar() {
+export interface ShopFilters {
+  gender: string[];
+  category: string[];
+}
 
-  const [men, setMen] = useState(false);
-  const [women, setWomen] = useState(false);
+interface FilterSidebarProps {
+  filters: ShopFilters;
+  onChange: (filters: ShopFilters) => void;
+}
 
-  const [shirts, setShirts] = useState(false);
-  const [pants, setPants] = useState(false);
-  const [jackets, setJackets] = useState(false);
+export function FilterSidebar({
+  filters,
+  onChange,
+}: FilterSidebarProps) {
+  const toggleFilter = (
+    type: "gender" | "category",
+    value: string
+  ) => {
+    const current = filters[type] ?? [];
+
+    const updated = current.includes(value)
+      ? current.filter((item) => item !== value)
+      : [...current, value];
+
+    onChange({
+      ...filters,
+      [type]: updated,
+    });
+  };
+
+  const clearFilters = () => {
+    onChange({
+      gender: [],
+      category: [],
+    });
+  };
+
+  const hasFilters =
+    filters.gender.length > 0 ||
+    filters.category.length > 0;
 
   return (
-    <aside className="space-y-10">
+    <div className="space-y-10">
+
+      {/* =========================
+          FILTER HEADER
+      ========================== */}
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.15em]">
+          Filters
+        </h2>
+
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="text-xs text-neutral-500 underline underline-offset-4 transition hover:text-black"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      {/* =========================
+          GENDER
+      ========================== */}
 
       <div>
-
-        <h3 className="mb-4 text-lg font-semibold">
+        <h3 className="mb-4 text-sm font-semibold">
           Gender
         </h3>
 
         <div className="space-y-3">
-
           <Checkbox
             label="Men"
-            checked={men}
-            onChange={() => setMen(!men)}
+            checked={filters.gender.includes("men")}
+            onChange={() =>
+              toggleFilter("gender", "men")
+            }
           />
 
           <Checkbox
             label="Women"
-            checked={women}
-            onChange={() => setWomen(!women)}
+            checked={filters.gender.includes("women")}
+            onChange={() =>
+              toggleFilter("gender", "women")
+            }
           />
-
         </div>
-
       </div>
 
-      <div>
+      {/* =========================
+          CATEGORY
+      ========================== */}
 
-        <h3 className="mb-4 text-lg font-semibold">
+      <div>
+        <h3 className="mb-4 text-sm font-semibold">
           Category
         </h3>
 
         <div className="space-y-3">
-
           <Checkbox
             label="Shirts"
-            checked={shirts}
-            onChange={() => setShirts(!shirts)}
+            checked={filters.category.includes("shirts")}
+            onChange={() =>
+              toggleFilter("category", "shirts")
+            }
           />
 
           <Checkbox
             label="Pants"
-            checked={pants}
-            onChange={() => setPants(!pants)}
+            checked={filters.category.includes("pants")}
+            onChange={() =>
+              toggleFilter("category", "pants")
+            }
           />
 
           <Checkbox
             label="Jackets"
-            checked={jackets}
-            onChange={() => setJackets(!jackets)}
+            checked={filters.category.includes("jackets")}
+            onChange={() =>
+              toggleFilter("category", "jackets")
+            }
           />
-
         </div>
-
       </div>
 
-
-      <div>
-
-  <h3 className="mb-4 text-lg font-semibold">
-    Price
-  </h3>
-
-  <input
-    type="range"
-    min={0}
-    max={30000}
-    className="w-full"
-  />
-
-  <div className="mt-2 flex justify-between text-sm text-neutral-500">
-
-    <span>0 DA</span>
-
-    <span>30 000 DA</span>
-
-  </div>
-
-</div>
-    </aside>
+    </div>
   );
 }

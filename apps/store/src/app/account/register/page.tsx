@@ -2,158 +2,108 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { register } from "../../../services/auth";
+import Link from "next/link";
+import { register, login, getMe } from "../../../lib/api/auth";
+import { useAuth } from "../../../store/auth";
+import { ApiError } from "../../../lib/api/client";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const setSession = useAuth((s) => s.setSession);
 
   const [form, setForm] = useState({
-    first_name: "",
-    last_name: "",
+    firstName: "",
+    lastName: "",
     phone: "",
     email: "",
     password: "",
   });
-
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
 
-  const handleSubmit = async (
-    e: React.FormEvent
-  ) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
+    setError(null);
     setLoading(true);
-    setError("");
 
     try {
-      await register(form);
+      await register({
+        first_name: form.firstName,
+        last_name: form.lastName,
+        phone: form.phone,
+        email: form.email || null,
+        password: form.password,
+      });
 
-      router.push("/account/login");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail ??
-          "Registration failed."
-      );
+      // Auto-login juste après l'inscription
+      const { access_token } = await login({
+        phone: form.phone,
+        password: form.password,
+      });
+      const user = await getMe(access_token);
+
+      setSession(access_token, user);
+
+      router.push("/account");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        setError("Ce téléphone ou cet email est déjà utilisé.");
+      } else {
+        setError("Une erreur est survenue. Réessaie.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="mx-auto mt-20 max-w-lg rounded-xl border bg-white p-8 shadow">
+    <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
+      <h1 className="mb-8 text-4xl font-serif">Créer un compte</h1>
 
-      <h1 className="mb-8 text-center text-3xl font-bold">
-        Create Account
-      </h1>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
-      >
-
-        <div>
-          <label>First Name</label>
-
-          <input
-            name="first_name"
-            type="text"
-            value={form.first_name}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border p-3"
-            required
-          />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          <input required name="firstName" placeholder="Prénom"
+            value={form.firstName} onChange={handleChange}
+            className="rounded-xl border p-4" />
+          <input required name="lastName" placeholder="Nom"
+            value={form.lastName} onChange={handleChange}
+            className="rounded-xl border p-4" />
         </div>
 
-        <div>
-          <label>Last Name</label>
+        <input required name="phone" placeholder="Téléphone"
+          value={form.phone} onChange={handleChange}
+          className="w-full rounded-xl border p-4" />
 
-          <input
-            name="last_name"
-            type="text"
-            value={form.last_name}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border p-3"
-            required
-          />
-        </div>
+        <input name="email" type="email" placeholder="Email (optionnel)"
+          value={form.email} onChange={handleChange}
+          className="w-full rounded-xl border p-4" />
 
-        <div>
-          <label>Phone</label>
+        <input required name="password" type="password" placeholder="Mot de passe (8 caractères min.)"
+          value={form.password} onChange={handleChange}
+          minLength={8}
+          className="w-full rounded-xl border p-4" />
 
-          <input
-            name="phone"
-            type="text"
-            value={form.phone}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border p-3"
-            required
-          />
-        </div>
-
-        <div>
-          <label>Email</label>
-
-          <input
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border p-3"
-            required
-          />
-        </div>
-
-        <div>
-          <label>Password</label>
-
-          <input
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border p-3"
-            required
-          />
-        </div>
-
-        {error && (
-          <p className="text-red-500">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded bg-black py-3 text-white transition hover:bg-neutral-800 disabled:opacity-50"
+          className="w-full rounded-full bg-[#0F2D52] py-4 text-lg font-semibold text-white disabled:opacity-50"
         >
-          {loading
-            ? "Creating account..."
-            : "Create Account"}
+          {loading ? "Création..." : "Créer mon compte"}
         </button>
-
       </form>
 
-      <p className="mt-6 text-center text-sm">
-        Already have an account?{" "}
-        <a
-          href="/account/login"
-          className="font-semibold underline"
-        >
-          Login
-        </a>
+      <p className="mt-6 text-center text-sm text-neutral-500">
+        Déjà un compte ?{" "}
+        <Link href="/account/login" className="text-[#0F2D52] underline">
+          Se connecter
+        </Link>
       </p>
-
-    </div>
+    </main>
   );
 }

@@ -1,201 +1,466 @@
-import { Product } from "../../types/product";
-import { products as mockProducts } from "../../data/products";
-import {
-  ColorRead,
-  ProductColorList,
-  ProductImageRead,
-  ProductList,
-  ProductRating,
-  ProductRead,
-  ProductVariantRead,
-  SizeRead,
-} from "../../types/api/product";
 import { apiClient } from "./client";
+
 import {
-  applyRating,
-  mapProductReadToProduct,
-} from "./mappers/product";
+  Product,
+  ProductColor,
+  ProductImage,
+  ProductVariant,
+} from "../../types/product";
 
-async function getProductRating(productId: number): Promise<ProductRating> {
-  return apiClient<ProductRating>(`/reviews/product/${productId}/average`);
+import {
+  ApiProduct,
+  ApiProductList,
+  ApiProductRating,
+} from "../../types/api";
+
+// =========================================================
+// PRODUCTS LIST
+// =========================================================
+
+export function fetchProductList(skip = 0, limit = 20) {
+  return apiClient<ApiProductList>(
+    `/products/list?skip=${skip}&limit=${limit}`
+  );
 }
 
-async function getProductColors(productId: number): Promise<ProductColorList> {
-  return apiClient<ProductColorList>(`/product-colors/product/${productId}`);
+// =========================================================
+// PRODUCTS FILTER
+// =========================================================
+
+export function fetchFilteredProducts(
+  gender?: string,
+  skip = 0,
+  limit = 20
+) {
+  const params = new URLSearchParams();
+
+  if (gender) {
+    params.set("gender", gender);
+  }
+
+  params.set("skip", String(skip));
+  params.set("limit", String(limit));
+
+  return apiClient<ApiProductList>(
+    `/products/filter?${params.toString()}`
+  );
 }
 
-async function getColor(colorId: number): Promise<ColorRead> {
-  return apiClient<ColorRead>(`/colors/${colorId}`);
+// =========================================================
+// FEATURED
+// =========================================================
+
+export function fetchFeaturedProducts(limit = 8) {
+  return apiClient<ApiProduct[]>(
+    `/products/featured?limit=${limit}`
+  );
 }
 
-async function getSize(sizeId: number): Promise<SizeRead> {
-  return apiClient<SizeRead>(`/sizes/${sizeId}`);
+// =========================================================
+// NEW PRODUCTS
+// =========================================================
+
+export function fetchNewProducts(limit = 8) {
+  return apiClient<ApiProduct[]>(
+    `/products/new?limit=${limit}`
+  );
 }
 
-async function getProductImages(
-  productColorId: number
-): Promise<ProductImageRead[]> {
-  return apiClient<ProductImageRead[]>(
+// =========================================================
+// PRODUCT BY SLUG
+// =========================================================
+
+export function fetchProductBySlug(slug: string) {
+  return apiClient<ApiProduct>(
+    `/products/${slug}`
+  );
+}
+
+// =========================================================
+// PRODUCT COLORS
+// =========================================================
+
+interface RawProductColor {
+  id: number;
+  product_id: number;
+  color_id: number;
+}
+
+export function fetchProductColors(productId: number) {
+  return apiClient<{
+    total: number;
+    items: RawProductColor[];
+  }>(
+    `/product-colors/product/${productId}`
+  );
+}
+
+// =========================================================
+// PRODUCT IMAGES
+// =========================================================
+
+export function fetchProductImages(productColorId: number) {
+  return apiClient<ProductImage[]>(
     `/product-images/color/${productColorId}`
   );
 }
 
-async function getVariantsByProductColor(
-  productColorId: number
-): Promise<ProductVariantRead[]> {
-  return apiClient<ProductVariantRead[]>(
+// =========================================================
+// PRODUCT VARIANTS
+// =========================================================
+
+export function fetchVariantsByColor(productColorId: number) {
+  return apiClient<ProductVariant[]>(
     `/product-variants/product-color/${productColorId}`
   );
 }
 
-async function enrichProduct(apiProduct: ProductRead): Promise<Product> {
-  const [rating, productColors] = await Promise.all([
-    getProductRating(apiProduct.id).catch(() => ({
+// =========================================================
+// COLOR
+// =========================================================
+
+export function fetchColor(colorId: number) {
+  return apiClient<{
+    id: number;
+    name: string;
+    hex_code: string;
+  }>(
+    `/colors/${colorId}`
+  );
+}
+
+// =========================================================
+// SIZE
+// =========================================================
+
+export function fetchSize(sizeId: number) {
+  return apiClient<{
+    id: number;
+    name: string;
+    display_order: number;
+  }>(
+    `/sizes/${sizeId}`
+  );
+}
+
+// =========================================================
+// RATING
+// =========================================================
+
+export function fetchProductRating(productId: number) {
+  return apiClient<ApiProductRating>(
+    `/reviews/product/${productId}/average`
+  );
+}
+
+// =========================================================
+// ADAPTER FOR LIST
+// =========================================================
+
+export function adaptToListProduct(
+  p: ApiProduct
+): Product {
+  // -------------------------------------------------------
+  // Calculate total stock from variants
+  // -------------------------------------------------------
+
+  const totalStock =
+    p.colors?.reduce(
+      (total, color) =>
+        total +
+        (color.variants?.reduce(
+          (sum, variant) => sum + variant.stock,
+          0
+        ) ?? 0),
+      0
+    ) ?? 0;
+
+  // -------------------------------------------------------
+  // Get all images
+  // -------------------------------------------------------
+
+  const allImages =
+    p.colors?.flatMap(
+      (color) => color.images ?? []
+    ) ?? [];
+
+  // -------------------------------------------------------
+  // Primary image > first image
+  // -------------------------------------------------------
+
+  const primaryImage =
+    allImages.find(
+      (image) => image.is_primary
+    ) ?? allImages[0];
+
+  // -------------------------------------------------------
+  // Adapt API product -> Frontend Product
+  // -------------------------------------------------------
+
+  return {
+    id: String(p.id),
+
+    name: p.name,
+    slug: p.slug,
+
+    description:
+      p.description ?? "",
+
+    base_price:
+      Number(p.base_price),
+
+    compare_at_price:
+      p.compare_at_price !== null
+        ? Number(p.compare_at_price)
+        : null,
+
+    stock: totalStock,
+
+    weight:
+      p.weight !== null
+        ? Number(p.weight)
+        : null,
+
+    is_active: p.is_active,
+    is_featured: p.is_featured,
+    is_new: p.is_new,
+
+    sku: p.sku,
+
+    created_at: p.created_at,
+    updated_at: p.updated_at,
+
+    gender:
+      p.gender ?? undefined,
+
+    // Product card image
+    images: primaryImage
+      ? [primaryImage.image_url]
+      : [],
+
+    // Colors
+    colors:
+      p.colors?.map((color) => ({
+        id: color.id,
+        product_id: color.product_id,
+        color_id: color.color_id,
+        color: color.color,
+        images: color.images,
+        variants: color.variants?.map((v) => ({
+          ...v,
+          sku: (v as any).sku ?? "",
+        })) ?? [],
+      })) ?? [],
+
+    sizes: [],
+
+    featured:
+      p.is_featured,
+
+    newArrival:
+      p.is_new,
+  };
+}
+
+// =========================================================
+// FULL PRODUCT
+// =========================================================
+
+export async function getFullProduct(
+  slug: string
+): Promise<Product> {
+
+  // -------------------------------------------------------
+  // Get basic product
+  // -------------------------------------------------------
+
+  const p =
+    await fetchProductBySlug(slug);
+
+  // -------------------------------------------------------
+  // Get product colors
+  // -------------------------------------------------------
+
+  const {
+    items: rawColors,
+  } =
+    await fetchProductColors(p.id);
+
+  // -------------------------------------------------------
+  // Build complete colors
+  // -------------------------------------------------------
+
+  const colors: ProductColor[] =
+    await Promise.all(
+      rawColors.map(async (rc) => {
+
+        const [
+          color,
+          images,
+          variants,
+        ] = await Promise.all([
+
+          fetchColor(
+            rc.color_id
+          ),
+
+          fetchProductImages(
+            rc.id
+          ),
+
+          fetchVariantsByColor(
+            rc.id
+          ),
+        ]);
+
+        // -------------------------------------------------
+        // Add size information to variants
+        // -------------------------------------------------
+
+        const variantsWithSize:
+          ProductVariant[] =
+          await Promise.all(
+
+            variants.map(
+              async (variant) => ({
+                ...variant,
+
+                size:
+                  await fetchSize(
+                    variant.size_id
+                  ),
+              })
+            )
+          );
+
+        // -------------------------------------------------
+        // Return complete ProductColor
+        // -------------------------------------------------
+
+        return {
+          id: rc.id,
+
+          product_id:
+            rc.product_id,
+
+          color_id:
+            rc.color_id,
+
+          color,
+
+          images:
+            images.sort(
+              (a, b) =>
+                (a.position ?? 0) -
+                (b.position ?? 0)
+            ),
+
+          variants:
+            variantsWithSize,
+        };
+      })
+    );
+
+  // =======================================================
+  // Rating
+  // =======================================================
+
+  const rating =
+    await fetchProductRating(
+      p.id
+    ).catch(() => ({
       average_rating: 0,
       total_reviews: 0,
-    })),
-    getProductColors(apiProduct.id),
-  ]);
+    }));
 
-  const colorEntries = await Promise.all(
-    productColors.items.map(async (productColor) => {
-      const [color, images, variants] = await Promise.all([
-        getColor(productColor.color_id),
-        getProductImages(productColor.id).catch(() => []),
-        getVariantsByProductColor(productColor.id).catch(() => []),
-      ]);
+  // =======================================================
+  // Calculate total stock
+  // =======================================================
 
-      return { color, images, variants };
-    })
-  );
+  const totalStock =
+    colors.reduce(
+      (total, color) =>
+        total +
+        (color.variants?.reduce(
+          (sum, variant) =>
+            sum + variant.stock,
+          0
+        ) ?? 0),
+      0
+    );
 
-  const colors = [
-    ...new Set(colorEntries.map((entry) => entry.color.name)),
-  ];
+  // =======================================================
+  // Return complete product
+  // =======================================================
 
-  const sizeIds = [
-    ...new Set(
-      colorEntries.flatMap((entry) =>
-        entry.variants.map((variant) => variant.size_id)
-      )
-    ),
-  ];
+  return {
+    id: String(p.id),
 
-  const sizes = await Promise.all(sizeIds.map((sizeId) => getSize(sizeId)));
-  const sortedSizes = sizes
-    .sort((a, b) => a.display_order - b.display_order)
-    .map((size) => size.name);
+    name: p.name,
+    slug: p.slug,
 
-  const images = colorEntries
-    .flatMap((entry) => entry.images)
-    .sort((a, b) => a.position - b.position)
-    .map((image) => image.image_url);
+    description:
+      p.description ?? "",
 
-  const product = mapProductReadToProduct(apiProduct, {
+    base_price:
+      Number(p.base_price),
+
+    compare_at_price:
+      p.compare_at_price !== null
+        ? Number(p.compare_at_price)
+        : null,
+
+    stock: totalStock,
+
+    weight:
+      p.weight !== null
+        ? Number(p.weight)
+        : null,
+
+    is_active:
+      p.is_active,
+
+    is_featured:
+      p.is_featured,
+
+    is_new:
+      p.is_new,
+
+    sku: p.sku,
+
+    created_at:
+      p.created_at,
+
+    updated_at:
+      p.updated_at,
+
+    gender:
+      p.gender ?? undefined,
+
     colors,
-    sizes: sortedSizes,
-    images: images.length > 0 ? images : undefined,
-  });
 
-  return applyRating(product, rating);
-}
+    // All product images
+    images:
+      colors.flatMap(
+        (color) =>
+          color.images ?? []
+      ).map(
+        (image) =>
+          image.image_url
+      ),
 
-export async function fetchProducts(
-  skip = 0,
-  limit = 20
-): Promise<Product[]> {
-  const data = await apiClient<ProductList>(
-    `/products/list?skip=${skip}&limit=${limit}`
-  );
+    sizes: [],
 
-  return data.items.map((item) => mapProductReadToProduct(item));
-}
+    featured:
+      p.is_featured,
 
-export async function fetchFeaturedProducts(limit = 8): Promise<Product[]> {
-  const data = await apiClient<ProductRead[]>(
-    `/products/featured?limit=${limit}`
-  );
+    newArrival:
+      p.is_new,
 
-  return data.map((item) => mapProductReadToProduct(item));
-}
+    rating:
+      rating.average_rating,
 
-export async function fetchNewProducts(limit = 8): Promise<Product[]> {
-  const data = await apiClient<ProductRead[]>(`/products/new?limit=${limit}`);
-
-  return data.map((item) =>
-    mapProductReadToProduct(item, { bestseller: false })
-  );
-}
-
-export async function fetchProductBySlug(slug: string): Promise<Product> {
-  const data = await apiClient<ProductRead>(`/products/${slug}`);
-  return enrichProduct(data);
-}
-
-export async function searchProducts(
-  query: string,
-  skip = 0,
-  limit = 20
-): Promise<Product[]> {
-  const data = await apiClient<ProductList>(
-    `/products/search?q=${encodeURIComponent(query)}&skip=${skip}&limit=${limit}`
-  );
-
-  return data.items.map((item) => mapProductReadToProduct(item));
-}
-
-async function withMockFallback<T>(
-  fetcher: () => Promise<T>,
-  fallback: () => T
-): Promise<T> {
-  try {
-    return await fetcher();
-  } catch {
-    return fallback();
-  }
-}
-
-export async function getProductsForStore(): Promise<Product[]> {
-  return withMockFallback(fetchProducts, () => mockProducts);
-}
-
-export async function getFeaturedProductsForStore(
-  limit = 8
-): Promise<Product[]> {
-  return withMockFallback(
-    () => fetchFeaturedProducts(limit),
-    () => mockProducts.filter((product) => product.featured).slice(0, limit)
-  );
-}
-
-export async function getProductBySlugForStore(
-  slug: string
-): Promise<Product | null> {
-  try {
-    return await fetchProductBySlug(slug);
-  } catch {
-    return mockProducts.find((product) => product.slug === slug) ?? null;
-  }
-}
-
-export async function searchProductsForStore(query: string): Promise<Product[]> {
-  if (!query.trim()) {
-    return getProductsForStore();
-  }
-
-  return withMockFallback(
-    () => searchProducts(query),
-    () => {
-      const value = query.toLowerCase().trim();
-
-      return mockProducts.filter(
-        (product) =>
-          product.name.toLowerCase().includes(value) ||
-          product.category.toLowerCase().includes(value) ||
-          product.gender.toLowerCase().includes(value) ||
-          product.description.toLowerCase().includes(value) ||
-          product.tags.some((tag) => tag.toLowerCase().includes(value))
-      );
-    }
-  );
+    reviews:
+      rating.total_reviews,
+  };
 }

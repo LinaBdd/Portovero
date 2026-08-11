@@ -2,112 +2,87 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-import { useAuth } from "../../../context/AuthContext";
+import Link from "next/link";
+import { login, getMe } from "../../../lib/api/auth";
+import { useAuth } from "../../../store/auth";
+import { ApiError } from "../../../lib/api/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const setSession = useAuth((s) => s.setSession);
 
-  const { login } = useAuth();
-
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-
+  const [form, setForm] = useState({ phone: "", password: "" });
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
+    setError(null);
     setLoading(true);
-    setError("");
 
     try {
-      await login(phone, password);
+      const { access_token } = await login(form);
+      const user = await getMe(access_token);
 
-      router.replace("/");
+      setSession(access_token, user);
 
-    } catch (err: any) {
-      const detail = err.response?.data?.detail;
-
-      if (typeof detail === "string") {
-        setError(detail);
-      } else if (Array.isArray(detail)) {
-        setError(detail[0]?.msg ?? "Login failed.");
+      router.push("/account");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError("Téléphone ou mot de passe incorrect.");
       } else {
-        setError("Login failed.");
+        setError("Une erreur est survenue. Réessaie.");
       }
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-100">
+    <main className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-16">
+      <h1 className="mb-8 text-4xl font-serif">Connexion</h1>
 
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <input
+          required
+          name="phone"
+          placeholder="Téléphone"
+          value={form.phone}
+          onChange={handleChange}
+          className="w-full rounded-xl border p-4"
+        />
 
-        <h1 className="mb-8 text-center text-3xl font-bold">
-          Login
-        </h1>
+        <input
+          required
+          name="password"
+          type="password"
+          placeholder="Mot de passe"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full rounded-xl border p-4"
+        />
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-full bg-[#0F2D52] py-4 text-lg font-semibold text-white disabled:opacity-50"
         >
+          {loading ? "Connexion..." : "Se connecter"}
+        </button>
+      </form>
 
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Phone
-            </label>
-
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-              className="w-full rounded-lg border p-3"
-            />
-
-          </div>
-
-          <div>
-
-            <label className="mb-2 block font-medium">
-              Password
-            </label>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full rounded-lg border p-3"
-            />
-
-          </div>
-
-          {error && (
-            <div className="rounded bg-red-100 p-3 text-red-600">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-black py-3 text-white"
-          >
-            {loading ? "Signing in..." : "Login"}
-          </button>
-
-        </form>
-
-      </div>
-
-    </div>
+      <p className="mt-6 text-center text-sm text-neutral-500">
+        Pas de compte ?{" "}
+        <Link href="/account/register" className="text-[#0F2D52] underline">
+          Créer un compte
+        </Link>
+      </p>
+    </main>
   );
 }

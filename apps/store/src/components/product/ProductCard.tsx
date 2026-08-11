@@ -28,7 +28,7 @@ export function ProductCard({
     image,
     hoverImage,
     loading: imagesLoading,
-  } = useProductImages(product.id);
+  } = useProductImages(Number(product.id));
 
   /*
    * The API returns prices as strings.
@@ -60,7 +60,7 @@ export function ProductCard({
 
         <Link
           href={`/product/${product.slug}`}
-          className="block"
+          className="group block"
         >
           {imagesLoading ? (
             <div className="flex h-[420px] w-full animate-pulse items-center justify-center bg-neutral-100">

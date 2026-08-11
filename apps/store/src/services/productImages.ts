@@ -4,8 +4,9 @@ export interface ProductImage {
   id: number;
   product_color_id: number;
   image_url: string;
+  alt?: string | null;
+  position?: number | null;
   is_primary?: boolean;
-  display_order?: number;
 }
 
 /**
@@ -40,8 +41,9 @@ export const getProductImagesByColor = async (
 export const createProductImage = async (data: {
   product_color_id: number;
   image_url: string;
+  alt?: string | null;
   is_primary?: boolean;
-  display_order?: number;
+  position?: number | null;
 }): Promise<ProductImage> => {
   const response = await api.post(
     "/product-images/",
@@ -58,8 +60,9 @@ export const updateProductImage = async (
   imageId: number,
   data: {
     image_url?: string;
+    alt?: string | null;
     is_primary?: boolean;
-    display_order?: number;
+    position?: number | null;
   }
 ): Promise<ProductImage> => {
   const response = await api.put(
