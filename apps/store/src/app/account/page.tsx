@@ -44,7 +44,7 @@ export default function AccountPage() {
         </Link>
 
         <Link
-          href="/wishlist"
+          href="/account/wishlist"
           className="rounded-2xl border p-6 transition hover:bg-neutral-50"
         >
           <h2 className="text-lg font-semibold">Ma liste de souhaits</h2>

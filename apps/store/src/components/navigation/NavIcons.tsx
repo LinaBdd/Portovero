@@ -25,11 +25,9 @@ export function NavIcons() {
 
   return (
     <div className="flex items-center gap-5">
-      <Link href="/search" className="transition hover:scale-110">
-        <Search className="h-5 w-5" />
-      </Link>
+      
 
-      <Link href="/wishlist" className="transition hover:scale-110">
+      <Link href="/account/wishlist" className="transition hover:scale-110">
         <Heart className="h-5 w-5" />
       </Link>
 
@@ -56,7 +54,7 @@ export function NavIcons() {
             <Link href="/account/orders" className="block px-5 py-3 hover:bg-neutral-100">
               Orders
             </Link>
-            <Link href="/wishlist" className="block px-5 py-3 hover:bg-neutral-100">
+            <Link href="/account/wishlist" className="block px-5 py-3 hover:bg-neutral-100">
               Wishlist
             </Link>
             <Link href="/account/addresses" className="block px-5 py-3 hover:bg-neutral-100">

@@ -15,13 +15,13 @@ export default function Home() {
 
       <main>
         <Hero />
-        <FeaturedCollections />
+        
         <BestSellers />
         <BrandStory />
         <WhyPortovero />
         <Testimonials />
-        <Newsletter />
-        <InstagramFeed />
+        
+        
       </main>
     </>
   );

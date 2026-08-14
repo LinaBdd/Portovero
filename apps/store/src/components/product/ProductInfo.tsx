@@ -164,6 +164,8 @@ export function ProductInfo({ product }: Props) {
    */
 
   const handleAddToCart = () => {
+    console.log("CLICK DETECTED");
+
     if (!selectedColor) {
       toast.error(
         "Veuillez sélectionner une couleur."

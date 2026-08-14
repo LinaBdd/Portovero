@@ -1,6 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Checkbox } from "../ui/checkbox";
+
+import {
+  fetchCategories,
+  type Category,
+} from "../../lib/api/products";
 
 export interface ShopFilters {
   gender: string[];
@@ -16,6 +23,53 @@ export function FilterSidebar({
   filters,
   onChange,
 }: FilterSidebarProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] =
+    useState(true);
+
+  // ============================================================
+  // LOAD CATEGORIES FROM BACKEND
+  // ============================================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        setLoadingCategories(true);
+
+        const data = await fetchCategories();
+
+        if (!cancelled) {
+          setCategories(data);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load categories:",
+          error
+        );
+
+        if (!cancelled) {
+          setCategories([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCategories(false);
+        }
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ============================================================
+  // TOGGLE FILTER
+  // ============================================================
+
   const toggleFilter = (
     type: "gender" | "category",
     value: string
@@ -32,6 +86,10 @@ export function FilterSidebar({
     });
   };
 
+  // ============================================================
+  // CLEAR FILTERS
+  // ============================================================
+
   const clearFilters = () => {
     onChange({
       gender: [],
@@ -42,6 +100,10 @@ export function FilterSidebar({
   const hasFilters =
     filters.gender.length > 0 ||
     filters.category.length > 0;
+
+  // ============================================================
+  // RENDER
+  // ============================================================
 
   return (
     <div className="space-y-10">
@@ -104,32 +166,35 @@ export function FilterSidebar({
         </h3>
 
         <div className="space-y-3">
-          <Checkbox
-            label="Shirts"
-            checked={filters.category.includes("shirts")}
-            onChange={() =>
-              toggleFilter("category", "shirts")
-            }
-          />
-
-          <Checkbox
-            label="Pants"
-            checked={filters.category.includes("pants")}
-            onChange={() =>
-              toggleFilter("category", "pants")
-            }
-          />
-
-          <Checkbox
-            label="Jackets"
-            checked={filters.category.includes("jackets")}
-            onChange={() =>
-              toggleFilter("category", "jackets")
-            }
-          />
+          {loadingCategories ? (
+            <div className="space-y-3">
+              <div className="h-5 w-24 animate-pulse bg-neutral-100" />
+              <div className="h-5 w-28 animate-pulse bg-neutral-100" />
+              <div className="h-5 w-20 animate-pulse bg-neutral-100" />
+            </div>
+          ) : categories.length > 0 ? (
+            categories.map((category) => (
+              <Checkbox
+                key={category.id}
+                label={category.name}
+                checked={filters.category.includes(
+                  category.slug
+                )}
+                onChange={() =>
+                  toggleFilter(
+                    "category",
+                    category.slug
+                  )
+                }
+              />
+            ))
+          ) : (
+            <p className="text-sm text-neutral-400">
+              No categories available.
+            </p>
+          )}
         </div>
       </div>
-
     </div>
   );
 }

@@ -29,6 +29,7 @@ export function fetchProductList(skip = 0, limit = 20) {
 
 export function fetchFilteredProducts(
   gender?: string,
+  category?: string,
   skip = 0,
   limit = 20
 ) {
@@ -36,6 +37,10 @@ export function fetchFilteredProducts(
 
   if (gender) {
     params.set("gender", gender);
+  }
+
+  if (category) {
+    params.set("category", category);
   }
 
   params.set("skip", String(skip));
@@ -169,7 +174,8 @@ export function adaptToListProduct(
       (total, color) =>
         total +
         (color.variants?.reduce(
-          (sum, variant) => sum + variant.stock,
+          (sum, variant) =>
+            sum + variant.stock,
           0
         ) ?? 0),
       0
@@ -221,35 +227,64 @@ export function adaptToListProduct(
         ? Number(p.weight)
         : null,
 
-    is_active: p.is_active,
-    is_featured: p.is_featured,
-    is_new: p.is_new,
+    is_active:
+      p.is_active,
+
+    is_featured:
+      p.is_featured,
+
+    is_new:
+      p.is_new,
 
     sku: p.sku,
 
-    created_at: p.created_at,
-    updated_at: p.updated_at,
+    created_at:
+      p.created_at,
+
+    updated_at:
+      p.updated_at,
+
+    // =====================================================
+    // FILTER DATA
+    // =====================================================
 
     gender:
       p.gender ?? undefined,
 
-    // Product card image
+    categories:
+      p.categories?.map(({ id, name, slug }) => ({
+        id,
+        name,
+        slug,
+      })) ?? [],
+
+    // =====================================================
+    // PRODUCT CARD IMAGE
+    // =====================================================
+
     images: primaryImage
       ? [primaryImage.image_url]
       : [],
 
-    // Colors
+    // =====================================================
+    // COLORS
+    // =====================================================
+
     colors:
       p.colors?.map((color) => ({
         id: color.id,
         product_id: color.product_id,
         color_id: color.color_id,
         color: color.color,
-        images: color.images,
-        variants: color.variants?.map((v) => ({
-          ...v,
-          sku: (v as any).sku ?? "",
-        })) ?? [],
+
+        images:
+          color.images,
+
+        variants:
+          color.variants?.map((v) => ({
+            ...v,
+            sku: (v as any).sku ?? "",
+          })) ?? [],
       })) ?? [],
 
     sizes: [],
@@ -434,20 +469,40 @@ export async function getFullProduct(
     updated_at:
       p.updated_at,
 
+    // =====================================================
+    // FILTER DATA
+    // =====================================================
+
     gender:
       p.gender ?? undefined,
 
+    categories:
+      p.categories?.map(({ id, name, slug }) => ({
+        id,
+        name,
+        slug,
+      })) ?? [],
+
+    // =====================================================
+    // COLORS
+    // =====================================================
+
     colors,
 
-    // All product images
+    // =====================================================
+    // ALL PRODUCT IMAGES
+    // =====================================================
+
     images:
-      colors.flatMap(
-        (color) =>
-          color.images ?? []
-      ).map(
-        (image) =>
-          image.image_url
-      ),
+      colors
+        .flatMap(
+          (color) =>
+            color.images ?? []
+        )
+        .map(
+          (image) =>
+            image.image_url
+        ),
 
     sizes: [],
 
@@ -463,4 +518,42 @@ export async function getFullProduct(
     reviews:
       rating.total_reviews,
   };
+}
+
+// =========================================================
+// STORE PRODUCTS
+// =========================================================
+
+export async function getProductsForStore(): Promise<Product[]> {
+  const response =
+    await fetchProductList(0, 100);
+
+  return response.items.map(
+    adaptToListProduct
+  );
+}
+
+// =========================================================
+// CATEGORIES
+// =========================================================
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  image?: string | null;
+  is_active: boolean;
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  return apiClient<Category[]>(
+    "/categories/active"
+  );
+}
+
+export function searchProductsForStore(query: string) {
+  return apiClient<Product[]>(
+    `/products/search?q=${encodeURIComponent(query)}`
+  );
 }

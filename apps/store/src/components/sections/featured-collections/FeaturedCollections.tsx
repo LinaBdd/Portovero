@@ -2,9 +2,15 @@ import { Section } from "../../ui/section";
 import { H2, Lead } from "../../ui/typography";
 
 import { CollectionCard } from "./CollectionCard";
-import { collections } from "./data";
+import { fetchFeaturedCollections } from "../../../lib/api/collections";
 
-export function FeaturedCollections() {
+
+export async function FeaturedCollections() {
+
+  const collections =
+    await fetchFeaturedCollections();
+
+
   return (
     <Section>
 
@@ -20,13 +26,19 @@ export function FeaturedCollections() {
 
       </div>
 
+
       <div className="grid gap-8 md:grid-cols-2">
-        {collections.map((collection) => (
-          <CollectionCard
-            key={collection.title}
-            {...collection}
-          />
-        ))}
+
+         {collections.map((collection) => (
+           <CollectionCard
+               key={collection.id}
+               title={collection.title}
+               subtitle={collection.description ?? ""}
+               image={collection.image ?? ""}
+               href={`/collections/${collection.slug}`}
+             />
+           ))}
+
       </div>
 
     </Section>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createAddress } from "../../lib/api/address";
 import { createCheckout } from "../../lib/api/checkout";
+import {createGuestOrder} from "../../lib/api/orders";
 import {
   fetchWilayas,
   fetchCommunesByWilaya,
@@ -14,7 +15,7 @@ import {
 import {
   fetchShippingMethods,
   ApiShippingMethod,
-} from "../../lib/api/shipping";
+} from "../../lib/api/shpping";
 
 import { useAuth } from "../../store/auth";
 
@@ -95,10 +96,7 @@ export default function CheckoutPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!user) {
-      router.push("/account/login?redirect=/checkout");
-      return;
-    }
+    const isGuest = !user;
 
     if (items.length === 0) {
       alert("Votre panier est vide.");
@@ -118,26 +116,104 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
 
-      const address = await createAddress(user.id, {
-        label: "Adresse de livraison",
-        first_name: form.firstName,
-        last_name: form.lastName,
-        phone: form.phone,
-        address: form.address,
-        wilaya_id: Number(form.wilayaId),
-        commune_id: Number(form.communeId),
-        postal_code: form.postalCode || null,
-        is_default: true,
-      });
+      let order;
 
-      const order = await createCheckout({
-        user_id: user.id,
-        address_id: address.id,
-        shipping_method_id: shippingMethodId,
-        payment_method: "cash_on_delivery",
-        coupon_code: null,
-        notes: null,
-      });
+
+      if (isGuest) {
+
+
+        order = await createGuestOrder({
+
+          first_name: form.firstName,
+
+          last_name: form.lastName,
+
+          phone: form.phone,
+
+          address: form.address,
+
+
+          wilaya_id: Number(form.wilayaId),
+
+          commune_id: Number(form.communeId),
+
+
+          shipping_method_id: shippingMethodId,
+
+
+          payment_method: "cash_on_delivery",
+
+
+          items: items.map((item) => ({
+
+            product_id: item.product.id,
+
+
+            product_variant_id:
+              item.variant?.id ?? null,
+
+
+            quantity: item.quantity,
+
+          })),
+
+
+          coupon_code: null,
+
+          notes: null,
+
+        });
+
+
+
+      } else {
+
+
+        const address = await createAddress(user.id, {
+
+
+          label: "Adresse de livraison",
+
+          first_name: form.firstName,
+
+          last_name: form.lastName,
+
+          phone: form.phone,
+
+          address: form.address,
+
+
+          wilaya_id: Number(form.wilayaId),
+
+          commune_id: Number(form.communeId),
+
+
+          postal_code: form.postalCode || null,
+
+          is_default: true,
+
+        });
+
+
+
+        order = await createCheckout({
+
+          user_id: user.id,
+
+          address_id: address.id,
+
+          shipping_method_id: shippingMethodId,
+
+          payment_method: "cash_on_delivery",
+
+          coupon_code: null,
+
+          notes: null,
+
+        });
+
+
+      }
 
       console.log("COMMANDE CRÉÉE :", order);
 

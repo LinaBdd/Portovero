@@ -30,7 +30,11 @@ export interface Product {
   newArrival?: boolean;
 
   gender?: string;
-  category?: string;
+  categories?: {
+   id: number;
+   name: string;
+   slug: string;
+  }[];
   collection?: string;
   tags?: string[];
 }

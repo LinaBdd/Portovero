@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 
+import { getProductsForStore } from "../../../lib/api/products";
 import { ProductCard } from "../../../components/product";
 import { Section } from "../../../components/ui/section";
 import { H1 } from "../../../components/ui/typography";
-import { getProductsForStore } from "../../../lib/api/products";
+
 
 type Props = {
   params: Promise<{
@@ -20,7 +21,7 @@ export default async function CollectionPage({
   const products = await getProductsForStore();
 
   const collectionProducts = products.filter(
-    (product) => product.gender === slug
+    (product: any) => product.gender === slug
   );
 
   if (collectionProducts.length === 0) {
@@ -40,7 +41,7 @@ export default async function CollectionPage({
 
       <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 
-        {collectionProducts.map((product) => (
+        {collectionProducts.map((product: any) => (
 
           <ProductCard
             key={product.id}

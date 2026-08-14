@@ -21,7 +21,11 @@ export interface ApiProduct {
 
   // Filtres
   gender?: string | null;
-  category?: string | null;
+  categories?: {
+   id: number;
+    name: string;
+    slug: string;
+  }[];
 
   colors?: ApiProductColor[];
 }
