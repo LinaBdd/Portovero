@@ -75,6 +75,8 @@ class ProductUpdate(BaseModel):
         ge=0
     )
 
+    gender: str | None = None
+
     is_active: bool | None = None
     is_featured: bool | None = None
     is_new: bool | None = None
@@ -102,6 +104,20 @@ class ColorRead(BaseModel):
     id: int
     name: str
     hex_code: str
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+# =========================================================
+# CATEGORY
+# =========================================================
+
+class CategoryRead(BaseModel):
+    id: int
+    name: str
+    slug: str
 
     model_config = ConfigDict(
         from_attributes=True
@@ -174,9 +190,13 @@ class ProductColorRead(BaseModel):
     )
 
 
-# =========================================================
-# PRODUCT RESPONSE
-# =========================================================
+class ProductCategoryRead(BaseModel):
+    category: CategoryRead
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 class ProductRead(ProductBase):
     id: int
@@ -191,11 +211,13 @@ class ProductRead(ProductBase):
         default_factory=list
     )
 
+    categories: list[ProductCategoryRead] = Field(
+        default_factory=list
+    )
+
     model_config = ConfigDict(
         from_attributes=True
     )
-
-
 # =========================================================
 # PAGINATION
 # =========================================================

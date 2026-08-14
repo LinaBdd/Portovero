@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 from fastapi import HTTPException, status
@@ -6,12 +8,15 @@ import re
 import unicodedata
 
 from app.models.product import Product
+from app.models.product_color import ProductColor
+from app.models.product_category import ProductCategory
+from app.models.category import Category
+
 from app.schemas.product import (
     ProductCreate,
     ProductUpdate,
-    
 )
-from app.models.product_color import ProductColor
+from app.models.product_variant import ProductVariant
 
 
 def slugify(value: str) -> str:
@@ -71,6 +76,7 @@ def create_product(
         compare_at_price=data.compare_at_price,
         stock=data.stock,
         weight=data.weight,
+        gender=data.gender,
         is_active=data.is_active,
         is_featured=data.is_featured,
         is_new=data.is_new,
@@ -134,6 +140,13 @@ def get_products(
 
     query = (
         db.query(Product)
+        .options(
+            selectinload(Product.categories)
+            .selectinload(ProductCategory.category),
+
+            selectinload(Product.colors)
+            .selectinload(ProductColor.images),
+        )
         .filter(Product.is_active == True)
     )
 
@@ -146,11 +159,23 @@ def get_products(
         .all()
     )
 
+    for product in products:
+        product.category_list = load_product_categories(
+            product
+        )
+
     return {
         "total": total,
         "items": products,
     }
 
+
+from sqlalchemy.orm import joinedload
+
+
+from sqlalchemy.orm import joinedload
+
+from app.models.product_color import ProductColor
 
 def get_featured_products(
     db: Session,
@@ -281,41 +306,119 @@ def delete_product(
     db.delete(product)
     db.commit()
 
+
 def filter_products(
     db: Session,
     gender: str | None = None,
+    category: str | None = None,
+    material_id: int | None = None,
+    min_price: Decimal | None = None,
+    max_price: Decimal | None = None,
     skip: int = 0,
     limit: int = 20,
 ) -> dict:
 
     query = (
         db.query(Product)
+        .options(
+            selectinload(Product.categories)
+            .selectinload(ProductCategory.category),
+
+            selectinload(Product.colors)
+            .selectinload(ProductColor.images),
+        )
         .filter(Product.is_active == True)
     )
 
-    # =========================
-    # FILTER BY GENDER
-    # =========================
+    # =====================================================
+    # GENDER
+    # =====================================================
 
     if gender:
         query = query.filter(
             Product.gender.ilike(gender)
         )
 
-    # =========================
-    # PAGINATION
-    # =========================
+    # =====================================================
+    # MATERIAL
+    # =====================================================
 
-    total = query.count()
+    if material_id:
+        query = query.filter(
+            Product.material_id == material_id
+        )
+
+    # =====================================================
+    # PRICE
+    # =====================================================
+
+    if min_price is not None:
+        query = query.filter(
+            Product.base_price >= min_price
+        )
+
+    if max_price is not None:
+        query = query.filter(
+            Product.base_price <= max_price
+        )
+
+    # =====================================================
+    # CATEGORY
+    # =====================================================
+
+    if category:
+        query = (
+            query
+            .join(
+                ProductCategory,
+                ProductCategory.product_id == Product.id,
+            )
+            .join(
+                Category,
+                Category.id == ProductCategory.category_id,
+            )
+            .filter(
+                Category.slug == category
+            )
+        )
+
+    # =====================================================
+    # TOTAL
+    # =====================================================
+
+    total = query.distinct().count()
+
+    # =====================================================
+    # PRODUCTS
+    # =====================================================
 
     products = (
         query
+        .distinct()
         .offset(skip)
         .limit(limit)
         .all()
     )
 
+    # =====================================================
+    # CATEGORY LIST
+    # =====================================================
+
+    for product in products:
+        product.category_list = load_product_categories(
+            product
+        )
+
     return {
         "total": total,
         "items": products,
     }
+
+def load_product_categories(
+    product: Product,
+) -> list[Category]:
+    return [
+        pc.category
+        for pc in product.categories
+        if pc.category is not None
+    ]

@@ -1,6 +1,9 @@
+from decimal import Decimal
+
 from fastapi import (
     APIRouter,
     Depends,
+    HTTPException,
     Query,
     Response,
     status,
@@ -33,6 +36,10 @@ from app.services.product import (
 from app.auth.dependencies import (
     get_current_admin,
 )
+
+from app.models.product import Product
+from app.models.category import Category
+from app.models.product_category import ProductCategory
 
 router = APIRouter(
     prefix="/products",
@@ -93,11 +100,13 @@ def search(
     )
 
 
-# IMPORTANT :
-# /filter AVANT /{slug}
 @router.get("/filter", response_model=ProductList)
 def filter_products_route(
     gender: str | None = None,
+    category: str | None = None,
+    material_id: int | None = None,
+    min_price: Decimal | None = None,
+    max_price: Decimal | None = None,
     skip: int = 0,
     limit: int = Query(20, le=100),
     db: Session = Depends(get_db),
@@ -105,6 +114,10 @@ def filter_products_route(
     return filter_products(
         db=db,
         gender=gender,
+        category=category,
+        material_id=material_id,
+        min_price=min_price,
+        max_price=max_price,
         skip=skip,
         limit=limit,
     )
@@ -142,7 +155,7 @@ def create(
     )
 
 
-@router.patch("/{product_id}", response_model=ProductRead)
+@router.patch("/{product_id:int}", response_model=ProductRead)
 def update(
     product_id: int,
     data: ProductUpdate,
@@ -156,7 +169,7 @@ def update(
     )
 
 
-@router.patch("/{product_id}/stock", response_model=ProductRead)
+@router.patch("/{product_id:int}/stock", response_model=ProductRead)
 def decrease_stock(
     product_id: int,
     quantity: int,
@@ -171,7 +184,7 @@ def decrease_stock(
 
 
 @router.delete(
-    "/{product_id}",
+    "/{product_id:int}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete(
@@ -185,3 +198,67 @@ def delete(
     )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# =========================
+# PRODUCT <-> CATEGORY LINKS
+# =========================
+
+@router.post(
+    "/{product_id:int}/categories/{category_id:int}",
+    status_code=status.HTTP_201_CREATED,
+)
+def assign_category(
+    product_id: int,
+    category_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_admin),
+):
+    product = db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found.")
+
+    category = db.get(Category, category_id)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found.")
+
+    existing = (
+        db.query(ProductCategory)
+        .filter(
+            ProductCategory.product_id == product_id,
+            ProductCategory.category_id == category_id,
+        )
+        .first()
+    )
+    if existing:
+        return {"message": "Already assigned."}
+
+    link = ProductCategory(product_id=product_id, category_id=category_id)
+    db.add(link)
+    db.commit()
+
+    return {"message": "Category assigned."}
+
+
+@router.delete("/{product_id:int}/categories/{category_id:int}")
+def unassign_category(
+    product_id: int,
+    category_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_admin),
+):
+    link = (
+        db.query(ProductCategory)
+        .filter(
+            ProductCategory.product_id == product_id,
+            ProductCategory.category_id == category_id,
+        )
+        .first()
+    )
+    if not link:
+        raise HTTPException(status_code=404, detail="Not assigned.")
+
+    db.delete(link)
+    db.commit()
+
+    return {"message": "Category unassigned."}

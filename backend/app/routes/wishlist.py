@@ -1,12 +1,9 @@
-from fastapi import (
-    APIRouter,
-    Depends,
-)
-
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-
+from app.auth.dependencies import get_current_user
+from app.models.user import User
 from app.schemas.wishlist import WishlistRead
 
 from app.services.wishlist import (
@@ -15,53 +12,64 @@ from app.services.wishlist import (
     remove_from_wishlist,
 )
 
-
 router = APIRouter(
     prefix="/wishlist",
     tags=["Wishlist"],
 )
 
 
+# ============================================================
+# MY WISHLIST
+# ============================================================
+
 @router.get(
-    "/{user_id}",
+    "/",
     response_model=list[WishlistRead],
 )
-def read_user_wishlist(
-    user_id: int,
+def read_my_wishlist(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     return get_user_wishlist(
         db,
-        user_id,
+        current_user.id,
     )
 
 
+# ============================================================
+# ADD
+# ============================================================
+
 @router.post(
-    "/{user_id}/{product_id}",
+    "/{product_id}",
     response_model=WishlistRead,
 )
 def create(
-    user_id: int,
     product_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     return add_to_wishlist(
         db,
-        user_id,
+        current_user.id,
         product_id,
     )
 
 
+# ============================================================
+# REMOVE
+# ============================================================
+
 @router.delete(
-    "/{user_id}/{product_id}",
+    "/{product_id}",
 )
 def delete(
-    user_id: int,
     product_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     return remove_from_wishlist(
         db,
-        user_id,
+        current_user.id,
         product_id,
     )
