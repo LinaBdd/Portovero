@@ -20,6 +20,27 @@ export interface ApiProduct {
   sku: string;
 }
 
+export interface ProductImagePayload {
+  url: string;
+  alt?: string | null;
+  position: number;
+  is_primary: boolean;
+}
+
+export interface ProductColorPayload {
+  color_id: number;
+  images: ProductImagePayload[];
+}
+
+export interface ProductVariantPayload {
+  color_id: number;
+  size_id: number;
+  stock: number;
+  price: number;
+  old_price?: number | null;
+  is_active: boolean;
+}
+
 export interface ProductPayload {
   name: string;
   description?: string | null;
@@ -32,15 +53,11 @@ export interface ProductPayload {
 
   gender?: string | null;
 
-
   category_id: number | null;
 
-  image_url: string | null;
+  colors: ProductColorPayload[];
 
-  color_id: number | null;
-
-  size_id: number | null;
-
+  variants: ProductVariantPayload[];
 
   is_active: boolean;
   is_featured: boolean;
@@ -54,20 +71,17 @@ export interface ProductImage {
   is_primary: boolean;
 }
 
-
 export interface ProductCategory {
   id: number;
   name: string;
   slug: string;
 }
 
-
 export interface ProductColor {
   id: number;
   name: string;
   hex: string | null;
 }
-
 
 export interface ProductVariant {
   id: number;
@@ -84,11 +98,19 @@ export function fetchProducts(skip = 0, limit = 50) {
 }
 
 export function fetchProduct(id: number) {
-  // /{slug} accepte aussi via id si tu passes le slug — ici on utilise plutôt
-  // une recherche dans la liste pour l'instant, faute d'un GET /products/{id} public par id.
   return apiClient<ApiProduct>(`/products/id/${id}`);
 }
 
+/**
+ * Création complète depuis l'admin.
+ *
+ * Le backend crée :
+ * - Product
+ * - ProductCategory
+ * - ProductColor
+ * - ProductImage
+ * - ProductVariant
+ */
 export function createProduct(data: ProductPayload) {
   return apiClient<ApiProduct>("/products/create", {
     method: "POST",
@@ -96,7 +118,10 @@ export function createProduct(data: ProductPayload) {
   });
 }
 
-export function updateProduct(id: number, data: Partial<ProductPayload>) {
+export function updateProduct(
+  id: number,
+  data: Partial<ProductPayload>
+) {
   return apiClient<ApiProduct>(`/products/${id}`, {
     method: "PATCH",
     body: data,
@@ -104,36 +129,66 @@ export function updateProduct(id: number, data: Partial<ProductPayload>) {
 }
 
 export function deleteProduct(id: number) {
-  return apiClient(`/products/${id}`, { method: "DELETE" });
+  return apiClient(`/products/${id}`, {
+    method: "DELETE",
+  });
 }
-
 
 export interface Category {
   id: number;
   name: string;
 }
 
-
 export interface Color {
   id: number;
   name: string;
 }
-
 
 export interface Size {
   id: number;
   name: string;
 }
 
-
 export function fetchCategories() {
-  return apiClient<{ total: number; items: Category[] }>("/categories");
+  return apiClient<{
+    total: number;
+    items: Category[];
+  }>("/categories");
 }
 
 export function fetchColors() {
-  return apiClient<{ total: number; items: Color[] }>("/colors");
+  return apiClient<{
+    total: number;
+    items: Color[];
+  }>("/colors");
 }
 
 export function fetchSizes() {
-  return apiClient<{ total: number; items: Size[] }>("/sizes");
+  return apiClient<{
+    total: number;
+    items: Size[];
+  }>("/sizes");
+}
+
+
+export async function uploadProductImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/uploads/image`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "Erreur lors de l'upload de l'image");
+  }
+
+  const data = await response.json();
+
+  return data.url;
 }
