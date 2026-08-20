@@ -262,3 +262,13 @@ def unassign_category(
     db.commit()
 
     return {"message": "Category unassigned."}
+
+
+
+@router.get("/id/{product_id:int}", response_model=ProductRead)
+def product_by_id(
+    product_id: int,
+    db: Session = Depends(get_db),
+    _: dict = Depends(get_current_admin),
+):
+    return get_product(db=db, product_id=product_id)
