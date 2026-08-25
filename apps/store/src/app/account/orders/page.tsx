@@ -1,7 +1,13 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  ArrowRight,
+  Package,
+  ShoppingBag,
+} from "lucide-react";
 
 import { fetchMyOrders, type ApiOrder } from "../../../lib/api/orders";
 
@@ -28,100 +34,247 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-20">
-        <h1 className="font-serif text-4xl">My Orders</h1>
+      <main className="min-h-screen bg-[#F8F5EF] text-[#172B3A]">
+        <section className="mx-auto max-w-[1200px] px-6 pb-24 pt-16 sm:px-8 lg:px-12 lg:pt-24">
+          
+          <div className="border-b border-[#DCD5CA] pb-10">
+            <p className="mb-4 text-[10px] uppercase tracking-[0.28em] text-[#A68B57]">
+              Portovero
+            </p>
 
-        <div className="mt-10 space-y-4">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="h-24 animate-pulse bg-neutral-100"
-            />
-          ))}
-        </div>
+            <h1 className="font-heading text-5xl font-medium tracking-[-0.045em] sm:text-6xl">
+              Mes commandes
+            </h1>
+          </div>
+
+          <div className="mt-10 divide-y divide-[#DCD5CA] border-y border-[#DCD5CA]">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="flex items-center justify-between py-7"
+              >
+                <div className="space-y-3">
+                  <div className="h-3 w-24 animate-pulse rounded bg-[#E8E1D7]" />
+                  <div className="h-5 w-32 animate-pulse rounded bg-[#E8E1D7]" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-[#E8E1D7]" />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="ml-auto h-3 w-16 animate-pulse rounded bg-[#E8E1D7]" />
+                  <div className="ml-auto h-4 w-24 animate-pulse rounded bg-[#E8E1D7]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-20">
-      <header className="mb-12">
-        <p className="text-xs uppercase tracking-[0.25em] text-neutral-400">
-          Account
-        </p>
+    <main className="min-h-screen bg-[#F8F5EF] text-[#172B3A]">
 
-        <h1 className="mt-3 font-serif text-4xl sm:text-5xl">
-          My Orders
-        </h1>
-      </header>
+      {/* Header */}
+      <section className="mx-auto max-w-[1200px] px-6 pb-12 pt-16 sm:px-8 lg:px-12 lg:pt-24">
 
-      {error && (
-        <p className="text-sm text-red-500">
-          {error}
-        </p>
-      )}
+        <div className="border-b border-[#DCD5CA] pb-10">
 
-      {!error && orders.length === 0 && (
-        <div className="border border-neutral-200 py-20 text-center">
-          <h2 className="font-serif text-2xl">
-            No orders yet
-          </h2>
-
-          <p className="mt-3 text-sm text-neutral-500">
-            You haven't placed an order yet.
+          <p className="mb-4 text-[10px] uppercase tracking-[0.28em] text-[#A68B57]">
+            Mon compte
           </p>
 
-          <Link
-            href="/shop"
-            className="mt-8 inline-block bg-black px-8 py-3 text-sm text-white"
-          >
-            Discover the collection
-          </Link>
-        </div>
-      )}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
-      {orders.length > 0 && (
-        <div className="space-y-4">
-          {orders.map((order) => (
+            <div>
+              <h1 className="font-heading text-5xl font-medium tracking-[-0.045em] sm:text-6xl">
+                Mes commandes
+              </h1>
+
+              <p className="mt-4 text-sm text-[#766F66]">
+                Retrouvez l'historique et le suivi de vos commandes.
+              </p>
+            </div>
+
+            {orders.length > 0 && (
+              <p className="text-xs text-[#8A837A]">
+                {orders.length}{" "}
+                {orders.length === 1 ? "commande" : "commandes"}
+              </p>
+            )}
+
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <section className="mx-auto max-w-[1200px] px-6 pb-24 sm:px-8 lg:px-12">
+
+        {error && (
+          <div className="border-y border-red-200 py-5">
+            <p className="text-sm text-red-600">
+              {error}
+            </p>
+          </div>
+        )}
+
+        {!error && orders.length === 0 && (
+          <div className="py-24 text-center">
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#E9E1D5]">
+              <ShoppingBag
+                size={21}
+                strokeWidth={1.3}
+                className="text-[#A68B57]"
+              />
+            </div>
+
+            <h2 className="mt-7 font-heading text-2xl font-medium">
+              Aucune commande
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#8A837A]">
+              Vous n'avez pas encore passé de commande.
+              Découvrez notre sélection et trouvez votre prochaine pièce.
+            </p>
+
             <Link
-              key={order.id}
-              href={`/account/orders/${order.id}`}
-              className="block border border-neutral-200 p-6 transition hover:border-black"
+              href="/shop"
+              className="
+                mt-8
+                inline-flex
+                items-center
+                gap-3
+                border-b
+                border-[#172B3A]
+                pb-1
+                text-sm
+                font-medium
+                transition-colors
+                hover:border-[#A68B57]
+                hover:text-[#A68B57]
+              "
             >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-neutral-400">
-                    Order
-                  </p>
-
-                  <h2 className="mt-1 font-serif text-xl">
-                    #{order.id}
-                  </h2>
-
-                  <p className="mt-2 text-sm text-neutral-500">
-                    {new Date(order.created_at).toLocaleDateString(
-                      "fr-DZ"
-                    )}
-                  </p>
-                </div>
-
-                <div className="sm:text-right">
-                  <p className="text-sm uppercase">
-                    {order.status}
-                  </p>
-
-                  <p className="mt-2 font-medium">
-                    {Number(order.total ?? 0).toLocaleString(
-                      "fr-DZ"
-                    )}{" "}
-                    DA
-                  </p>
-                </div>
-              </div>
+              Découvrir la collection
+              <ArrowRight size={15} strokeWidth={1.4} />
             </Link>
-          ))}
-        </div>
-      )}
+
+          </div>
+        )}
+
+        {orders.length > 0 && (
+          <div className="divide-y divide-[#DCD5CA] border-y border-[#DCD5CA]">
+
+            {orders.map((order) => (
+              <Link
+                key={order.id}
+                href={`/account/orders/${order.id}`}
+                className="
+                  group
+                  block
+                  py-7
+                  transition-colors
+                  hover:bg-[#F3EEE6]
+                  sm:px-5
+                "
+              >
+                <div className="flex items-center justify-between gap-6">
+
+                  {/* Left */}
+                  <div className="flex items-start gap-5">
+
+                    <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E9E1D5]">
+                      <Package
+                        size={17}
+                        strokeWidth={1.4}
+                        className="text-[#A68B57]"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-[#A68B57]">
+                        Commande
+                      </p>
+
+                      <h2 className="mt-1 font-heading text-xl font-medium">
+                        #{order.id}
+                      </h2>
+
+                      <p className="mt-2 text-xs text-[#8A837A]">
+                        {new Date(
+                          order.created_at
+                        ).toLocaleDateString("fr-DZ")}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  {/* Right */}
+                  <div className="flex items-center gap-6">
+
+                    <div className="hidden text-right sm:block">
+
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-[#8A837A]">
+                        Statut
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium">
+                        {order.status}
+                      </p>
+
+                    </div>
+
+                    <div className="text-right">
+
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-[#8A837A]">
+                        Total
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium">
+                        {Number(order.total ?? 0).toLocaleString(
+                          "fr-DZ"
+                        )}{" "}
+                        DA
+                      </p>
+
+                    </div>
+
+                    <ArrowRight
+                      size={17}
+                      strokeWidth={1.4}
+                      className="
+                        hidden
+                        text-[#A68B57]
+                        transition-transform
+                        duration-300
+                        group-hover:translate-x-1
+                        sm:block
+                      "
+                    />
+
+                  </div>
+
+                </div>
+
+                {/* Mobile status */}
+                <div className="mt-5 flex items-center justify-between border-t border-[#E4DED4] pt-4 sm:hidden">
+
+                  <span className="text-[10px] uppercase tracking-[0.16em] text-[#8A837A]">
+                    Statut
+                  </span>
+
+                  <span className="text-xs font-medium">
+                    {order.status}
+                  </span>
+
+                </div>
+
+              </Link>
+            ))}
+
+          </div>
+        )}
+
+      </section>
     </main>
   );
 }

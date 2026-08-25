@@ -12,3 +12,17 @@ export interface ApiShippingMethod {
 export function fetchShippingMethods() {
   return apiClient<ApiShippingMethod[]>("/shipping-methods/");
 }
+
+export interface ApiShippingRate {
+  id: number;
+  wilaya_id: number;
+  shipping_method_id: number;
+  price: string;
+  is_active: boolean;
+}
+
+export function fetchShippingRates(wilayaId: number) {
+  return apiClient<ApiShippingRate[]>(
+    `/shipping-rates/wilaya/${wilayaId}`
+  );
+}

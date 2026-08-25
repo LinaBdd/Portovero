@@ -105,19 +105,7 @@ export const deleteProduct = async (
   return data;
 };
 
-export const decreaseStock = async (
-  productId: number,
-  quantity: number
-) => {
-  const { data } = await api.patch(
-    `/products/${productId}/stock`,
-    {
-      quantity,
-    }
-  );
 
-  return data;
-};
 
 /* ============================
    Product Details

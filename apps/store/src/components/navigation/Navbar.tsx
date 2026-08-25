@@ -3,67 +3,70 @@
 import { useEffect, useState } from "react";
 
 import { Container } from "../ui/container";
-
 import { DesktopNavigation } from "./DesktopNavigation";
 import { MobileNavigation } from "./MobileNavigation";
 import { NavIcons } from "./NavIcons";
 import { Logo } from "./Logo";
 
 export function Navbar() {
-
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-
-    const handleScroll = () => {
-
-      setScrolled(window.scrollY > 20);
-
+    const onScroll = () => {
+      setScrolled(window.scrollY > 30);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    onScroll();
 
-    return () =>
-      window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll);
 
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   return (
-
     <header
       className={`
-        fixed
-        top-0
-        left-0
-        right-0
-        z-50
-        transition-all
-        duration-300
+        fixed inset-x-0 top-0 z-50
+        transition-all duration-500
         ${
           scrolled
-            ? "bg-white/95 backdrop-blur border-b shadow-sm"
-            : "bg-transparent"
+            ? "bg-[#F7F3EC]/95 backdrop-blur-md shadow-[0_4px_24px_rgba(23,43,58,0.06)]"
+            : "bg-[#F7F3EC]/70 backdrop-blur-[2px]"
         }
       `}
     >
-
       <Container>
+        <div
+          className={`
+            flex items-center justify-between
+            border-b
+            transition-all duration-500
+            ${
+              scrolled
+                ? "h-[70px] border-[#172B3A]/10"
+                : "h-[78px] border-transparent"
+            }
+          `}
+        >
+          {/* Mobile menu */}
+          <div className="lg:hidden">
+            <MobileNavigation />
+          </div>
 
-        <div className="flex h-20 items-center justify-between">
-
-          <MobileNavigation />
-
+          {/* Logo */}
           <Logo />
 
-          <DesktopNavigation />
+          {/* Navigation */}
+          <div className="hidden lg:flex flex-1 justify-center">
+            <DesktopNavigation />
+          </div>
 
+          {/* Icons */}
           <NavIcons />
-
         </div>
-
       </Container>
-
     </header>
-
   );
 }

@@ -57,9 +57,8 @@ export function NavIcons() {
             <Link href="/account/wishlist" className="block px-5 py-3 hover:bg-neutral-100">
               Wishlist
             </Link>
-            <Link href="/account/addresses" className="block px-5 py-3 hover:bg-neutral-100">
-              Addresses
-            </Link>
+            
+            
             <button
               onClick={handleLogout}
               className="w-full px-5 py-3 text-left text-red-600 hover:bg-red-50"
