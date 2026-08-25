@@ -1,24 +1,127 @@
-import { apiClient } from "./client";
+import { apiClient, clearAdminSession } from "./client";
+
+/* ============================================================
+   COLORS
+============================================================ */
+
+export interface ApiColor {
+  id: number;
+  name: string;
+  hex_code: string;
+}
+
+/* ============================================================
+   IMAGES
+============================================================ */
+
+export interface ApiImage {
+  id: number;
+  product_color_id: number;
+  image_url: string;
+  alt: string | null;
+  position: number;
+  is_primary: boolean;
+}
+
+/* ============================================================
+   SIZES
+============================================================ */
+
+export interface ApiSize {
+  id: number;
+  name: string;
+  display_order: number;
+}
+
+/* ============================================================
+   VARIANTS
+============================================================ */
+
+export interface ApiVariant {
+  id: number;
+  product_color_id: number;
+  size_id: number;
+  sku: string;
+  stock: number;
+  price: string;
+  old_price: string | null;
+  is_active: boolean;
+  size: ApiSize;
+}
+
+/* ============================================================
+   PRODUCT COLORS
+============================================================ */
+
+export interface ApiProductColor {
+  id: number;
+  product_id: number;
+  color_id: number;
+  color: ApiColor;
+  images: ApiImage[];
+  variants: ApiVariant[];
+}
+
+/* ============================================================
+   CATEGORIES
+============================================================ */
+
+export interface ApiCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface ApiProductCategory {
+  category: ApiCategory;
+}
+
+/* ============================================================
+   PRODUCT
+============================================================ */
 
 export interface ApiProduct {
   id: number;
   name: string;
   slug: string;
   description: string | null;
+
   base_price: string;
   compare_at_price: string | null;
+
   stock: number;
+
   weight: string | null;
+  cost_price: string | null;
   gender: string | null;
-  category_id: number | null;
-  image_url: string | null;
-  color: string | null;
-  variant: string | null;
+
   is_active: boolean;
   is_featured: boolean;
   is_new: boolean;
+
   sku: string;
+
+  created_at: string;
+  updated_at: string;
+
+  colors: ApiProductColor[];
+  categories: ApiProductCategory[];
+
+  profit: number | null;
 }
+
+/* ============================================================
+   PRODUCT LIST RESPONSE
+============================================================ */
+
+export interface ProductsResponse {
+  total: number;
+  items: ApiProduct[];
+}
+
+/* ============================================================
+   PRODUCT CREATION PAYLOAD
+============================================================ */
 
 export interface ProductImagePayload {
   url: string;
@@ -33,6 +136,7 @@ export interface ProductColorPayload {
 }
 
 export interface ProductVariantPayload {
+  id?: number;
   color_id: number;
   size_id: number;
   stock: number;
@@ -47,16 +151,14 @@ export interface ProductPayload {
 
   base_price: number;
   compare_at_price?: number | null;
+  cost_price?: number | null;
 
-  stock: number;
   weight?: number | null;
-
   gender?: string | null;
 
   category_id: number | null;
 
   colors: ProductColorPayload[];
-
   variants: ProductVariantPayload[];
 
   is_active: boolean;
@@ -64,42 +166,54 @@ export interface ProductPayload {
   is_new: boolean;
 }
 
-export interface ProductImage {
-  id: number;
-  url: string;
-  alt: string | null;
-  is_primary: boolean;
-}
+/* ============================================================
+   SIMPLE CATEGORY / COLOR / SIZE
+============================================================ */
 
-export interface ProductCategory {
+export interface Category {
   id: number;
   name: string;
-  slug: string;
+  slug?: string;
 }
 
-export interface ProductColor {
+export interface Color {
   id: number;
   name: string;
-  hex: string | null;
+  hex_code?: string;
 }
 
-export interface ProductVariant {
+export interface Size {
   id: number;
-  sku: string;
-  size: string | null;
-  stock: number;
-  price: string | null;
+  name: string;
+  display_order?: number;
 }
 
-export function fetchProducts(skip = 0, limit = 50) {
-  return apiClient<{ total: number; items: ApiProduct[] }>(
+/* ============================================================
+   FETCH PRODUCTS
+============================================================ */
+
+export function fetchProducts(
+  skip = 0,
+  limit = 50
+) {
+  return apiClient<ProductsResponse>(
     `/products/list?skip=${skip}&limit=${limit}`
   );
 }
 
+/* ============================================================
+   FETCH ONE PRODUCT
+============================================================ */
+
 export function fetchProduct(id: number) {
-  return apiClient<ApiProduct>(`/products/id/${id}`);
+  return apiClient<ApiProduct>(
+    `/products/id/${id}`
+  );
 }
+
+/* ============================================================
+   CREATE PRODUCT
+============================================================ */
 
 /**
  * Création complète depuis l'admin.
@@ -111,43 +225,75 @@ export function fetchProduct(id: number) {
  * - ProductImage
  * - ProductVariant
  */
-export function createProduct(data: ProductPayload) {
-  return apiClient<ApiProduct>("/products/create", {
-    method: "POST",
-    body: data,
-  });
+
+export function createProduct(
+  data: ProductPayload
+) {
+  return apiClient<ApiProduct>(
+    "/admin/products/create",
+    {
+      method: "POST",
+      body: data,
+    }
+  );
 }
+
+/* ============================================================
+   UPDATE PRODUCT
+============================================================ */
 
 export function updateProduct(
   id: number,
   data: Partial<ProductPayload>
 ) {
-  return apiClient<ApiProduct>(`/products/${id}`, {
-    method: "PATCH",
-    body: data,
-  });
+  return apiClient<ApiProduct>(
+    `/admin/products/${id}`,
+    {
+      method: "PUT",
+      body: data,
+    }
+  );
 }
+
+/* ============================================================
+   VARIANT STOCK
+============================================================ */
+
+export interface UpdateVariantStockPayload {
+  stock: number;
+}
+
+export function updateVariantStock(
+  variantId: number,
+  stock: number
+) {
+  return apiClient<ApiVariant>(
+    `/admin/product-variants/${variantId}/stock`,
+    {
+      method: "PATCH",
+      body: {
+        stock,
+      },
+    }
+  );
+}
+
+/* ============================================================
+   DELETE PRODUCT
+============================================================ */
 
 export function deleteProduct(id: number) {
-  return apiClient(`/products/${id}`, {
-    method: "DELETE",
-  });
+  return apiClient(
+    `/products/${id}`,
+    {
+      method: "DELETE",
+    }
+  );
 }
 
-export interface Category {
-  id: number;
-  name: string;
-}
-
-export interface Color {
-  id: number;
-  name: string;
-}
-
-export interface Size {
-  id: number;
-  name: string;
-}
+/* ============================================================
+   CATEGORIES
+============================================================ */
 
 export function fetchCategories() {
   return apiClient<{
@@ -156,12 +302,20 @@ export function fetchCategories() {
   }>("/categories");
 }
 
+/* ============================================================
+   COLORS
+============================================================ */
+
 export function fetchColors() {
   return apiClient<{
     total: number;
     items: Color[];
   }>("/colors");
 }
+
+/* ============================================================
+   SIZES
+============================================================ */
 
 export function fetchSizes() {
   return apiClient<{
@@ -170,22 +324,69 @@ export function fetchSizes() {
   }>("/sizes");
 }
 
+/* ============================================================
+   UPLOAD PRODUCT IMAGE
+============================================================ */
 
-export async function uploadProductImage(file: File): Promise<string> {
+export async function uploadProductImage(
+  file: File
+): Promise<string> {
   const formData = new FormData();
+
   formData.append("file", file);
 
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ??
+    "http://localhost:8000";
+
+  const token =
+    typeof window !== "undefined"
+      ? (() => {
+          try {
+            const raw = localStorage.getItem(
+              "portovero-admin-auth"
+            );
+
+            if (!raw) {
+              return null;
+            }
+
+            const parsed = JSON.parse(raw);
+
+            return parsed?.state?.token ?? null;
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/uploads/image`,
+    `${BASE_URL}/admin/upload/image`,
     {
       method: "POST",
+
+      headers: {
+        ...(token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : {}),
+      },
+
       body: formData,
     }
   );
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || "Erreur lors de l'upload de l'image");
+
+    if (response.status === 401) {
+      clearAdminSession();
+    }
+
+    throw new Error(
+      text || "Erreur lors de l'upload de l'image"
+    );
   }
 
   const data = await response.json();

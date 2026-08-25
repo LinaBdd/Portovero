@@ -36,23 +36,40 @@ export function fetchOrderDetail(id: number) {
 }
 
 export function updateOrderStatus(id: number, status: string) {
-  return apiClient(`/orders/${id}`, {
-    method: "PUT",
-    body: { status },
-  });
+  return apiClient<ApiOrderDetail>(
+    `/admin/orders/${id}/status`,
+    {
+      method: "PATCH",
+      body: {
+        status,
+      },
+    },
+  );
 }
 
 export function updatePaymentStatus(
   id: number,
-  status: string
+  status: string,
 ) {
-  return apiClient(
+  return apiClient<ApiOrderDetail>(
     `/admin/orders/${id}/payment-status`,
     {
       method: "PATCH",
       body: {
         payment_status: status,
       },
-    }
+    },
+  );
+}
+
+/**
+ * Supprimer une commande depuis l'administration
+ */
+export function deleteOrder(id: number) {
+  return apiClient<void>(
+    `/admin/orders/${id}`,
+    {
+      method: "DELETE",
+    },
   );
 }

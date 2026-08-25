@@ -15,7 +15,7 @@ export function AdminGuard({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { user } = useAdminAuth();
+  const { user, token } = useAdminAuth();
 
   const [hydrated, setHydrated] = useState(false);
 
@@ -42,7 +42,7 @@ export function AdminGuard({
 
     if (
       hydrated &&
-      !user &&
+      (!user || !token) &&
       pathname !== "/login"
     ) {
       router.replace("/login");
@@ -51,6 +51,7 @@ export function AdminGuard({
   }, [
     hydrated,
     user,
+    token,
     pathname,
     router,
   ]);
@@ -62,7 +63,7 @@ export function AdminGuard({
   }
 
 
-  if (!user && pathname !== "/login") {
+  if ((!user || !token) && pathname !== "/login") {
     return null;
   }
 
