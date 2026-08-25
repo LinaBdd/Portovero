@@ -53,7 +53,7 @@ def update_shipping_method(
         shipping_method_id,
     )
 
-    if not db_shipping_method:
+    if db_shipping_method is None:
         return None
 
     for key, value in data.model_dump(
@@ -80,7 +80,7 @@ def delete_shipping_method(
         shipping_method_id,
     )
 
-    if not db_shipping_method:
+    if db_shipping_method is None:
         return None
 
     db.delete(db_shipping_method)

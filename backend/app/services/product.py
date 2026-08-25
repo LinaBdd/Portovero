@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 from fastapi import HTTPException, status
 
@@ -66,7 +66,6 @@ def create_product(
     db: Session,
     data: ProductCreate,
 ) -> Product:
-
     product = Product(
         name=data.name,
         slug=generate_unique_slug(db, data.name),
@@ -74,7 +73,7 @@ def create_product(
         description=data.description,
         base_price=data.base_price,
         compare_at_price=data.compare_at_price,
-        stock=data.stock,
+        stock=0,
         weight=data.weight,
         gender=data.gender,
         is_active=data.is_active,
@@ -83,10 +82,15 @@ def create_product(
     )
 
     db.add(product)
+    db.flush()
+
+
+
     db.commit()
     db.refresh(product)
 
     return product
+
 
 
 def get_product(
@@ -146,8 +150,11 @@ def get_products(
 
             selectinload(Product.colors)
             .selectinload(ProductColor.images),
+
+            selectinload(Product.colors)
+            .selectinload(ProductColor.variants),
         )
-        .filter(Product.is_active == True)
+        .filter(Product.is_active.is_(True))
     )
 
     total = query.count()
@@ -160,15 +167,20 @@ def get_products(
     )
 
     for product in products:
-        product.category_list = load_product_categories(
-            product
+        product.category_list = load_product_categories(product)
+
+        # Synchronise le stock avec les variantes
+        product.stock = sum(
+            variant.stock
+            for product_color in product.colors
+            for variant in product_color.variants
+            if variant.is_active
         )
 
     return {
         "total": total,
         "items": products,
     }
-
 
 from sqlalchemy.orm import joinedload
 
@@ -273,27 +285,6 @@ def update_product(
 
     return product
 
-
-def update_stock(
-    db: Session,
-    product_id: int,
-    quantity_to_remove: int,
-) -> Product:
-
-    product = get_product(db, product_id)
-
-    if product.stock < quantity_to_remove:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Insufficient stock.",
-        )
-
-    product.stock -= quantity_to_remove
-
-    db.commit()
-    db.refresh(product)
-
-    return product
 
 
 def delete_product(
@@ -422,3 +413,89 @@ def load_product_categories(
         for pc in product.categories
         if pc.category is not None
     ]
+
+def update_variant_stock(
+    db: Session,
+    variant_id: int,
+    new_stock: int,
+) -> ProductVariant:
+
+    if new_stock < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Stock cannot be negative.",
+        )
+
+    variant = (
+        db.query(ProductVariant)
+        .filter(
+            ProductVariant.id == variant_id,
+            ProductVariant.is_active.is_(True),
+        )
+        .with_for_update()
+        .first()
+    )
+
+    if not variant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Variant not found.",
+        )
+
+    variant.stock = new_stock
+
+    db.flush()
+
+    product_color = (
+        db.query(ProductColor)
+        .filter(
+            ProductColor.id == variant.product_color_id
+        )
+        .first()
+    )
+
+    if not product_color:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product color not found.",
+        )
+
+    sync_product_stock(
+        db,
+        product_color.product_id,
+    )
+
+    db.commit()
+    db.refresh(variant)
+
+    return variant
+
+def sync_product_stock(
+    db: Session,
+    product_id: int,
+) -> Product:
+    product = get_product(db, product_id)
+
+    total_stock = (
+        db.query(
+            func.coalesce(
+                func.sum(ProductVariant.stock),
+                0,
+            )
+        )
+        .join(
+            ProductColor,
+            ProductColor.id == ProductVariant.product_color_id,
+        )
+        .filter(
+            ProductColor.product_id == product_id,
+            ProductVariant.is_active.is_(True),
+        )
+        .scalar()
+    )
+
+    product.stock = max(0, int(total_stock or 0))
+
+    db.flush()
+
+    return product

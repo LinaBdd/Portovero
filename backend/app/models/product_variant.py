@@ -7,6 +7,7 @@ from sqlalchemy import (
     Numeric,
     String,
 )
+from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.orm import (
     Mapped,
@@ -16,9 +17,16 @@ from sqlalchemy.orm import (
 
 from app.database.core import Base
 
-
 class ProductVariant(Base):
     __tablename__ = "product_variants"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "product_color_id",
+            "size_id",
+            name="uq_product_variant_color_size",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,

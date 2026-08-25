@@ -41,3 +41,17 @@ class UserRead(UserBase):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class UserList(BaseModel):
+    total: int
+    items: list[UserRead]
+
+
+class UserDetail(UserRead):
+    """
+    Informations détaillées visibles par l'administrateur.
+
+    On n'expose volontairement PAS password_hash.
+    """
+    pass

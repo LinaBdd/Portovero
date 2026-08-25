@@ -67,6 +67,11 @@ class Product(Base):
         nullable=False,
     )
 
+    cost_price: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 2), 
+        nullable=True,
+    )
+
     compare_at_price: Mapped[Decimal | None] = mapped_column(
         Numeric(10, 2),
         nullable=True,

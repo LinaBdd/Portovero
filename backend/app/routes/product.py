@@ -29,31 +29,35 @@ from app.services.product import (
     get_new_products,
     search_products,
     update_product,
-    update_stock,
     delete_product,
+    update_variant_stock,
 )
 
-from app.auth.dependencies import (
-    get_current_admin,
-)
+from app.auth.dependencies import get_current_admin
 
 from app.models.product import Product
 from app.models.category import Category
 from app.models.product_category import ProductCategory
+
 
 router = APIRouter(
     prefix="/products",
     tags=["Products"],
 )
 
-# =========================
-# PUBLIC ROUTES
-# =========================
 
-@router.get("/list", response_model=ProductList)
+# ============================================================
+# PUBLIC ROUTES
+# ============================================================
+
+
+@router.get(
+    "/list",
+    response_model=ProductList,
+)
 def list_products(
-    skip: int = 0,
-    limit: int = Query(20, le=100),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     return get_products(
@@ -63,9 +67,12 @@ def list_products(
     )
 
 
-@router.get("/featured", response_model=list[ProductRead])
+@router.get(
+    "/featured",
+    response_model=list[ProductRead],
+)
 def featured_products(
-    limit: int = Query(8, le=20),
+    limit: int = Query(8, ge=1, le=20),
     db: Session = Depends(get_db),
 ):
     return get_featured_products(
@@ -74,9 +81,12 @@ def featured_products(
     )
 
 
-@router.get("/new", response_model=list[ProductRead])
+@router.get(
+    "/new",
+    response_model=list[ProductRead],
+)
 def new_products(
-    limit: int = Query(8, le=20),
+    limit: int = Query(8, ge=1, le=20),
     db: Session = Depends(get_db),
 ):
     return get_new_products(
@@ -85,11 +95,14 @@ def new_products(
     )
 
 
-@router.get("/search", response_model=ProductList)
+@router.get(
+    "/search",
+    response_model=ProductList,
+)
 def search(
-    q: str,
-    skip: int = 0,
-    limit: int = Query(20, le=100),
+    q: str = Query(..., min_length=1),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     return search_products(
@@ -100,17 +113,30 @@ def search(
     )
 
 
-@router.get("/filter", response_model=ProductList)
+@router.get(
+    "/filter",
+    response_model=ProductList,
+)
 def filter_products_route(
     gender: str | None = None,
     category: str | None = None,
     material_id: int | None = None,
-    min_price: Decimal | None = None,
-    max_price: Decimal | None = None,
-    skip: int = 0,
-    limit: int = Query(20, le=100),
+    min_price: Decimal | None = Query(None, ge=0),
+    max_price: Decimal | None = Query(None, ge=0),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
+    if (
+        min_price is not None
+        and max_price is not None
+        and min_price > max_price
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="min_price cannot be greater than max_price.",
+        )
+
     return filter_products(
         db=db,
         gender=gender,
@@ -123,21 +149,10 @@ def filter_products_route(
     )
 
 
-# /{slug} TOUJOURS EN DERNIER
-@router.get("/{slug}", response_model=ProductRead)
-def product_details(
-    slug: str,
-    db: Session = Depends(get_db),
-):
-    return get_product_by_slug(
-        db=db,
-        slug=slug,
-    )
-
-
-# =========================
+# ============================================================
 # ADMIN ROUTES
-# =========================
+# ============================================================
+
 
 @router.post(
     "/create",
@@ -155,7 +170,10 @@ def create(
     )
 
 
-@router.patch("/{product_id:int}", response_model=ProductRead)
+@router.patch(
+    "/{product_id:int}",
+    response_model=ProductRead,
+)
 def update(
     product_id: int,
     data: ProductUpdate,
@@ -169,18 +187,40 @@ def update(
     )
 
 
-@router.patch("/{product_id:int}/stock", response_model=ProductRead)
-def decrease_stock(
-    product_id: int,
-    quantity: int,
+# ============================================================
+# VARIANT STOCK
+# ============================================================
+
+
+@router.patch(
+    "/variants/{variant_id:int}/stock",
+)
+def decrease_variant_stock(
+    variant_id: int,
+    quantity: int = Query(..., gt=0),
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin),
 ):
-    return update_stock(
+    variant = update_variant_stock(
         db=db,
-        product_id=product_id,
+        variant_id=variant_id,
         quantity_to_remove=quantity,
     )
+
+    db.commit()
+    db.refresh(variant)
+
+    return {
+        "message": "Variant stock updated.",
+        "variant_id": variant.id,
+        "sku": variant.sku,
+        "stock": variant.stock,
+    }
+
+
+# ============================================================
+# DELETE PRODUCT
+# ============================================================
 
 
 @router.delete(
@@ -197,12 +237,15 @@ def delete(
         product_id=product_id,
     )
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT,
+    )
 
 
-# =========================
+# ============================================================
 # PRODUCT <-> CATEGORY LINKS
-# =========================
+# ============================================================
+
 
 @router.post(
     "/{product_id:int}/categories/{category_id:int}",
@@ -214,13 +257,27 @@ def assign_category(
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin),
 ):
-    product = db.get(Product, product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found.")
+    product = db.get(
+        Product,
+        product_id,
+    )
 
-    category = db.get(Category, category_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found.",
+        )
+
+    category = db.get(
+        Category,
+        category_id,
+    )
+
     if not category:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found.",
+        )
 
     existing = (
         db.query(ProductCategory)
@@ -230,17 +287,28 @@ def assign_category(
         )
         .first()
     )
-    if existing:
-        return {"message": "Already assigned."}
 
-    link = ProductCategory(product_id=product_id, category_id=category_id)
+    if existing:
+        return {
+            "message": "Already assigned.",
+        }
+
+    link = ProductCategory(
+        product_id=product_id,
+        category_id=category_id,
+    )
+
     db.add(link)
     db.commit()
 
-    return {"message": "Category assigned."}
+    return {
+        "message": "Category assigned.",
+    }
 
 
-@router.delete("/{product_id:int}/categories/{category_id:int}")
+@router.delete(
+    "/{product_id:int}/categories/{category_id:int}",
+)
 def unassign_category(
     product_id: int,
     category_id: int,
@@ -255,20 +323,56 @@ def unassign_category(
         )
         .first()
     )
+
     if not link:
-        raise HTTPException(status_code=404, detail="Not assigned.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category assignment not found.",
+        )
 
     db.delete(link)
     db.commit()
 
-    return {"message": "Category unassigned."}
+    return {
+        "message": "Category unassigned.",
+    }
 
 
+# ============================================================
+# ADMIN GET BY ID
+# ============================================================
 
-@router.get("/id/{product_id:int}", response_model=ProductRead)
+
+@router.get(
+    "/id/{product_id:int}",
+    response_model=ProductRead,
+)
 def product_by_id(
     product_id: int,
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin),
 ):
-    return get_product(db=db, product_id=product_id)
+    return get_product(
+        db=db,
+        product_id=product_id,
+    )
+
+
+# ============================================================
+# PUBLIC PRODUCT DETAILS
+# IMPORTANT: KEEP THIS LAST
+# ============================================================
+
+
+@router.get(
+    "/{slug}",
+    response_model=ProductRead,
+)
+def product_details(
+    slug: str,
+    db: Session = Depends(get_db),
+):
+    return get_product_by_slug(
+        db=db,
+        slug=slug,
+    )

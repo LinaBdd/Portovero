@@ -28,3 +28,4 @@ from .cart_item import CartItem
 from .commune import Commune
 from .payment import Payment
 from .notification import Notification
+from .shipping_rate import ShippingRate

@@ -2,6 +2,8 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    UploadFile,
+    
     status,
 )
 
@@ -14,6 +16,7 @@ from app.schemas.shipping_method import (
     ShippingMethodRead,
     ShippingMethodUpdate,
 )
+from fastapi import File
 
 from app.services.shipping_method import (
     create_shipping_method,
@@ -22,12 +25,17 @@ from app.services.shipping_method import (
     get_shipping_methods,
     update_shipping_method,
 )
+from app.services.shipping_rate import import_shipping_rates_csv
+from app.models.shipping_rate import ShippingRate
 
 router = APIRouter(
     prefix="/shipping-methods",
     tags=["Shipping Methods"],
 )
-
+shipping_rates_router = APIRouter(
+    prefix="/shipping-rates",
+    tags=["Shipping Rates"],
+)
 
 @router.get(
     "/",
@@ -121,3 +129,51 @@ def delete(
     return {
         "message": "Shipping method deleted successfully."
     }
+
+
+
+@shipping_rates_router.post("/import")
+async def import_shipping_rates(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    if not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No file provided.",
+        )
+
+    if not file.filename.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only CSV files are allowed.",
+        )
+
+    content = await file.read()
+
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The CSV file is empty.",
+        )
+
+    return import_shipping_rates_csv(
+        db=db,
+        content=content,
+    )
+
+
+
+@shipping_rates_router.get("/wilaya/{wilaya_id}")
+def get_shipping_rates_by_wilaya(
+    wilaya_id: int,
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(ShippingRate)
+        .filter(
+            ShippingRate.wilaya_id == wilaya_id,
+            ShippingRate.is_active == True,
+        )
+        .all()
+    )

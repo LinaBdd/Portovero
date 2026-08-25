@@ -6,10 +6,10 @@ from sqlalchemy import (
     Numeric,
     String,
 )
-
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
+    relationship,
 )
 
 from app.database.core import Base
@@ -37,6 +37,8 @@ class ShippingMethod(Base):
         nullable=False,
     )
 
+    # Tarif global de secours. Les tarifs réels par wilaya
+    # seront stockés dans ShippingRate.
     base_price: Mapped[Decimal] = mapped_column(
         Numeric(10, 2),
         default=0,
@@ -47,4 +49,10 @@ class ShippingMethod(Base):
         Boolean,
         default=True,
         nullable=False,
+    )
+
+    shipping_rates = relationship(
+        "ShippingRate",
+        back_populates="shipping_method",
+        cascade="all, delete-orphan",
     )

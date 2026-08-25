@@ -62,3 +62,9 @@ class Wilaya(Base):
         "Address",
         back_populates="wilaya",
     )
+
+    shipping_rates = relationship(
+    "ShippingRate",
+    back_populates="wilaya",
+    cascade="all, delete-orphan",
+)
