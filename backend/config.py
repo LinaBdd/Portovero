@@ -16,9 +16,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Frontends
-    FRONTEND_URL: str = "http://localhost:3001"
-    ADMIN_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str
+    ADMIN_URL: str
 
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
