@@ -54,14 +54,22 @@ export default function EditProductPage() {
   }, [id]);
 
   async function handleSubmit(data: ProductPayload) {
-    try {
-      await updateProduct(id, data);
-      router.push("/products");
-      router.refresh();
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour :", err);
-      throw err;
-    }
+   console.log("========== UPDATE ==========");
+   console.log("PRODUCT ID:", id);
+   console.log("DATA:", JSON.stringify(data, null, 2));
+
+   try {
+    const result = await updateProduct(id, data);
+
+    console.log("========== RESPONSE ==========");
+    console.log(JSON.stringify(result, null, 2));
+
+    router.push("/products");
+    router.refresh();
+   } catch (err) {
+    console.error("Erreur lors de la mise à jour :", err);
+    throw err;
+   }
   }
 
   async function handleDelete() {

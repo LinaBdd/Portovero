@@ -302,10 +302,13 @@ export function ProductForm({
 
           size_id: variant.size_id,
 
-          stock: Number(variant.stock) || 0,
+          stock: Number.isFinite(Number(variant.stock))
+            ? Number(variant.stock)
+            : 0,
 
-          price: Number(variant.price) || 0,
-
+          price: Number.isFinite(Number(variant.price))
+            ? Number(variant.price)
+            : 0,
           old_price:
             variant.old_price !== null &&
             variant.old_price !== undefined
@@ -517,6 +520,23 @@ export function ProductForm({
    * MODIFIER VARIANTE
    * ==========================================================
    */
+
+
+
+  function safeNumber(
+  value: string,
+  fallback: number | null = 0
+ ): number | null {
+  if (value.trim() === "") {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : fallback;
+ }
 
   function updateVariant(
     colorId: number,
@@ -1511,17 +1531,14 @@ export function ProductForm({
                       <input
                         type="number"
                         min="0"
-                        value={
-                          variant.stock
-                        }
+                        step="1"
+                        value={Number.isFinite(variant.stock) ? variant.stock : 0}
                         onChange={(e) =>
                           updateVariant(
                             variant.color_id,
                             variant.size_id,
                             "stock",
-                            Number(
-                              e.target.value
-                            )
+                            safeNumber(e.target.value, 0) ?? 0
                           )
                         }
                         className="w-full rounded-lg border p-2"
@@ -1539,17 +1556,13 @@ export function ProductForm({
                         type="number"
                         min="0"
                         step="0.01"
-                        value={
-                          variant.price
-                        }
+                        value={Number.isFinite(variant.price) ? variant.price : 0}
                         onChange={(e) =>
                           updateVariant(
                             variant.color_id,
                             variant.size_id,
                             "price",
-                            Number(
-                              e.target.value
-                            )
+                            safeNumber(e.target.value, 0) ?? 0
                           )
                         }
                         className="w-full rounded-lg border p-2"
@@ -1568,21 +1581,17 @@ export function ProductForm({
                         min="0"
                         step="0.01"
                         value={
-                          variant.old_price ??
-                          ""
+                          variant.old_price !== null &&
+                          Number.isFinite(variant.old_price)
+                             ? variant.old_price
+                             : ""
                         }
                         onChange={(e) =>
                           updateVariant(
                             variant.color_id,
                             variant.size_id,
                             "old_price",
-                            e.target
-                              .value
-                              ? Number(
-                                  e.target
-                                    .value
-                                )
-                              : null
+                            safeNumber(e.target.value, null)
                           )
                         }
                         className="w-full rounded-lg border p-2"
