@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type {
@@ -10,7 +10,6 @@ import type {
 } from "../../types/product";
 
 import { useCart } from "../../store/cart";
-
 import { Button } from "../ui/button";
 import { ColorSelector } from "./ColorSelector";
 import { QuantitySelector } from "./QuantitySelector";
@@ -20,82 +19,162 @@ type Props = {
   product: Product;
 };
 
+function safeNumber(
+  value: unknown,
+  fallback = 0
+): number {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
+
 export function ProductInfo({ product }: Props) {
   const { add } = useCart();
 
+  /*
+   * ============================================================
+   * INITIAL COLOR
+   * ============================================================
+   */
+
+  const initialColor =
+    product.colors?.find((color) =>
+      color.variants?.some(
+        (variant) =>
+          safeNumber(variant.stock) > 0
+      )
+    ) ??
+    product.colors?.[0] ??
+    null;
+
+  const initialVariant =
+    initialColor?.variants?.find(
+      (variant) =>
+        safeNumber(variant.stock) > 0
+    ) ??
+    initialColor?.variants?.[0] ??
+    null;
+
   const [selectedColor, setSelectedColor] =
-    useState<ProductColor | null>(
-      product.colors?.[0] ?? null
-    );
+    useState<ProductColor | null>(initialColor);
 
   const [selectedVariant, setSelectedVariant] =
-    useState<ProductVariant | null>(
-      product.colors?.[0]?.variants?.[0] ?? null
-    );
+    useState<ProductVariant | null>(initialVariant);
 
   const [quantity, setQuantity] = useState(1);
 
   /*
-   * =========================
-   * CURRENT VARIANTS
-   * =========================
+   * ============================================================
+   * SYNC WHEN PRODUCT CHANGES
+   * ============================================================
    */
 
-  const variants =
-    selectedColor?.variants ?? [];
+  useEffect(() => {
+    const color =
+      product.colors?.find((item) =>
+        item.variants?.some(
+          (variant) =>
+            safeNumber(variant.stock) > 0
+        )
+      ) ??
+      product.colors?.[0] ??
+      null;
+
+    const variant =
+      color?.variants?.find(
+        (item) =>
+          safeNumber(item.stock) > 0
+      ) ??
+      color?.variants?.[0] ??
+      null;
+
+    setSelectedColor(color);
+    setSelectedVariant(variant);
+    setQuantity(1);
+  }, [product]);
 
   /*
-   * =========================
+   * ============================================================
+   * CURRENT VARIANTS
+   * ============================================================
+   */
+
+  const variants = selectedColor?.variants ?? [];
+
+  /*
+   * ============================================================
    * AVAILABLE SIZES
-   * =========================
+   * ============================================================
    */
 
   const sizes = useMemo(() => {
     return variants
-      .filter((variant) => variant.size)
+      .filter(
+        (variant) =>
+          variant.size &&
+          safeNumber(variant.stock) > 0
+      )
       .map((variant) => variant.size!);
   }, [variants]);
 
   /*
-   * =========================
-   * PRICE
-   * =========================
+   * ============================================================
+   * CURRENT PRICE
+   *
+   * IMPORTANT:
+   * Le prix vient de la variante sélectionnée.
+   * Sinon on utilise le prix de base du produit.
+   * ============================================================
    */
 
-  const price = Number(product.base_price);
+  const price = safeNumber(
+    selectedVariant?.price ??
+      product.base_price
+  );
+
+  const oldPriceValue =
+    product.compare_at_price !== null &&
+    product.compare_at_price !== undefined
+      ? product.compare_at_price
+      : selectedVariant?.price ?? null;
 
   const oldPrice =
-    product.compare_at_price !== null
-      ? Number(product.compare_at_price)
+    oldPriceValue !== null &&
+    oldPriceValue !== undefined
+      ? safeNumber(oldPriceValue)
       : null;
 
   const hasSale =
     oldPrice !== null &&
+    Number.isFinite(oldPrice) &&
     oldPrice > price;
 
   const discount = hasSale
     ? Math.round(
-        ((oldPrice! - price) / oldPrice!) * 100
+        ((oldPrice - price) / oldPrice) * 100
       )
     : null;
 
   /*
-   * =========================
+   * ============================================================
    * STOCK
-   * =========================
+   * ============================================================
    */
 
-  const currentStock =
+  const currentStock = safeNumber(
     selectedVariant?.stock ??
-    product.stock;
+      product.stock
+  );
 
   const isOutOfStock =
     currentStock <= 0;
 
   /*
-   * =========================
+   * ============================================================
    * COLOR CHANGE
-   * =========================
+   * ============================================================
    */
 
   const handleColorChange = (
@@ -103,74 +182,65 @@ export function ProductInfo({ product }: Props) {
   ) => {
     setSelectedColor(color);
 
-    /*
-     * When the color changes,
-     * reset the selected variant
-     * to the first variant of that color.
-     */
+    const firstAvailableVariant =
+      color.variants?.find(
+        (variant) =>
+          safeNumber(variant.stock) > 0
+      ) ??
+      color.variants?.[0] ??
+      null;
 
-    const firstVariant =
-      color.variants?.[0] ?? null;
-
-    setSelectedVariant(firstVariant);
-
-    /*
-     * Reset quantity because
-     * stock may be different.
-     */
+    setSelectedVariant(
+      firstAvailableVariant
+    );
 
     setQuantity(1);
   };
 
   /*
-   * =========================
+   * ============================================================
    * SIZE CHANGE
-   * =========================
+   * ============================================================
    */
 
   const handleSizeChange = (
     variant: ProductVariant
   ) => {
     setSelectedVariant(variant);
-
     setQuantity(1);
   };
 
   /*
-   * =========================
+   * ============================================================
    * QUANTITY CHANGE
-   * =========================
+   * ============================================================
    */
 
   const handleQuantityChange = (
     value: number
   ) => {
-    const max =
-      selectedVariant?.stock ??
-      product.stock;
+    const safeValue = safeNumber(value, 1);
+    const max = Math.max(1, currentStock);
 
     setQuantity(
       Math.max(
         1,
-        Math.min(value, max)
+        Math.min(safeValue, max)
       )
     );
   };
 
   /*
-   * =========================
+   * ============================================================
    * ADD TO CART
-   * =========================
+   * ============================================================
    */
 
   const handleAddToCart = () => {
-    console.log("CLICK DETECTED");
-
     if (!selectedColor) {
       toast.error(
         "Veuillez sélectionner une couleur."
       );
-
       return;
     }
 
@@ -181,7 +251,16 @@ export function ProductInfo({ product }: Props) {
       toast.error(
         "Veuillez sélectionner une taille."
       );
+      return;
+    }
 
+    if (
+      !selectedVariant &&
+      variants.length > 0
+    ) {
+      toast.error(
+        "Veuillez sélectionner une taille."
+      );
       return;
     }
 
@@ -189,7 +268,6 @@ export function ProductInfo({ product }: Props) {
       toast.error(
         "Ce produit est en rupture de stock."
       );
-
       return;
     }
 
@@ -197,50 +275,54 @@ export function ProductInfo({ product }: Props) {
       toast.error(
         `Stock disponible : ${currentStock}`
       );
-
       return;
     }
 
-    /*
-     * TEMPORARY:
-     * We will adapt the cart store
-     * to ProductVariant in the next step.
-     */
-
     if (!selectedVariant) {
-     toast.error("Veuillez sélectionner une taille.");
-     return;
+      toast.error(
+        "Veuillez sélectionner une taille."
+      );
+      return;
     }
 
-    add(product, selectedColor, selectedVariant, quantity);
+    add(
+      product,
+      selectedColor,
+      selectedVariant,
+      quantity
+    );
 
     toast.success(
       "Produit ajouté au panier",
       {
-        description:
-          product.name,
+        description: product.name,
       }
     );
   };
 
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
+
   return (
     <div className="space-y-8">
 
-      {/* =========================
-          PRODUCT INFO
-      ========================== */}
+      {/* ======================================================
+          PRODUCT META
+
+          IMPORTANT:
+          Le titre du produit est volontairement supprimé ici.
+          ProductPage l'affiche déjà.
+      ====================================================== */}
 
       <div>
-
         {product.is_new && (
-          <p className="uppercase tracking-[0.25em] text-[#C8A96A]">
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[#C8A96A]">
             Nouveau
           </p>
         )}
-
-        <h1 className="mt-3 text-5xl font-serif">
-          {product.name}
-        </h1>
 
         {product.sku && (
           <p className="mt-3 text-xs uppercase tracking-widest text-neutral-400">
@@ -248,26 +330,26 @@ export function ProductInfo({ product }: Props) {
           </p>
         )}
 
-        <p className="mt-6 leading-8 text-neutral-600">
-          {product.description}
-        </p>
-
+        {product.description && (
+          <p className="mt-6 max-w-xl leading-8 text-neutral-600">
+            {product.description}
+          </p>
+        )}
       </div>
 
-      {/* =========================
+      {/* ======================================================
           PRICE
-      ========================== */}
+      ====================================================== */}
 
-      <div className="flex items-center gap-4">
-
-        <span className="text-3xl font-bold">
+      <div className="flex flex-wrap items-center gap-4">
+        <span className="text-3xl font-bold text-[#172B3A]">
           {price.toLocaleString("fr-DZ")} DA
         </span>
 
-        {hasSale && (
+        {hasSale && oldPrice !== null && (
           <>
             <span className="text-lg text-neutral-400 line-through">
-              {oldPrice!.toLocaleString(
+              {oldPrice.toLocaleString(
                 "fr-DZ"
               )}{" "}
               DA
@@ -278,12 +360,11 @@ export function ProductInfo({ product }: Props) {
             </span>
           </>
         )}
-
       </div>
 
-      {/* =========================
+      {/* ======================================================
           COLORS
-      ========================== */}
+      ====================================================== */}
 
       {product.colors &&
         product.colors.length > 0 && (
@@ -293,9 +374,9 @@ export function ProductInfo({ product }: Props) {
           />
         )}
 
-      {/* =========================
+      {/* ======================================================
           SIZES
-      ========================== */}
+      ====================================================== */}
 
       {sizes.length > 0 && (
         <SizeSelector
@@ -306,18 +387,18 @@ export function ProductInfo({ product }: Props) {
         />
       )}
 
-      {/* =========================
+      {/* ======================================================
           QUANTITY
-      ========================== */}
+      ====================================================== */}
 
       <QuantitySelector
         quantity={quantity}
         onChange={handleQuantityChange}
       />
 
-      {/* =========================
+      {/* ======================================================
           STOCK
-      ========================== */}
+      ====================================================== */}
 
       {isOutOfStock ? (
         <p className="text-sm font-medium text-red-600">
@@ -330,9 +411,9 @@ export function ProductInfo({ product }: Props) {
         </p>
       )}
 
-      {/* =========================
+      {/* ======================================================
           ADD TO CART
-      ========================== */}
+      ====================================================== */}
 
       <Button
         variant="primary"
@@ -344,7 +425,6 @@ export function ProductInfo({ product }: Props) {
           ? "Rupture de stock"
           : "Ajouter au panier"}
       </Button>
-
     </div>
   );
 }
