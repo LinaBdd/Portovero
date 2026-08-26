@@ -15,19 +15,15 @@ pydantic-settings==2.10.1
 
 # Validation
 pydantic==2.11.7
-
-# Authentication (on en aura besoin pour admin)
-python-jose[cryptography]==3.5.0
-passlib[bcrypt]==1.7.4
-
-# File upload (images produits)
-python-multipart==0.0.20
-
-# CORS pour Next.js
-fastapi-cors==0.0.6
-
-# Utils
 email-validator==2.2.0
 
-passlib[bcrypt]
+# Authentication
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
 bcrypt
+
+# File upload
+python-multipart==0.0.20
+
+# CORS
+fastapi-cors==0.0.6
