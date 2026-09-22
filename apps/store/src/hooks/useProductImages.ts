@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getProductColors } from "../services/productColors";
 import { getProductImagesByColor } from "../services/productImages";
 
-const API_URL = "http://127.0.0.1:8000";
+import { API_URL } from "../lib/api/config";
 
 function getFullImageUrl(
   imageUrl?: string
@@ -176,35 +176,5 @@ export function useProductImages(
     error,
   };
 
-function getFullImageUrl(
-  imageUrl?: string | null
-): string | undefined {
-  if (!imageUrl) {
-    return undefined;
-  }
 
-  const url = imageUrl.trim();
-
-  if (!url) {
-    return undefined;
-  }
-
-  // Déjà une URL complète
-  if (
-    url.startsWith("http://") ||
-    url.startsWith("https://")
-  ) {
-    return url;
-  }
-
-  // Le backend renvoie par exemple :
-  // /uploads/images/products/men/shirt1.webp
-  if (url.startsWith("/")) {
-    return `${API_URL}${url}`;
-  }
-
-  // Le backend renvoie par exemple :
-  // uploads/images/products/men/shirt1.webp
-  return `${API_URL}/${url}`;
-}
 }

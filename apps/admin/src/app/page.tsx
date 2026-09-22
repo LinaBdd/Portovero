@@ -51,20 +51,20 @@ const PAYMENT_LABELS: Record<string, string> = {
 ============================================================ */
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
-  pending: "#F59E0B",
-  confirmed: "#3B82F6",
-  processing: "#8B5CF6",
-  shipped: "#06B6D4",
-  delivered: "#10B981",
-  cancelled: "#EF4444",
+  pending: "#b8a98c",
+  confirmed: "#0F2D52",
+  processing: "#8f8064",
+  shipped: "#52634f",
+  delivered: "#52634f",
+  cancelled: "#9b5c58",
 };
 
 const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  pending: "#F59E0B",
-  completed: "#10B981",
-  paid: "#10B981",
-  failed: "#EF4444",
-  refunded: "#8B5CF6",
+  pending: "#b8a98c",
+  completed: "#52634f",
+  paid: "#52634f",
+  failed: "#9b5c58",
+  refunded: "#8f8064",
 };
 
 /* ============================================================
@@ -134,13 +134,13 @@ export default function DashboardPage() {
     {
       label: "Utilisateurs",
       value: stats.total_users,
-      color: "#3B82F6",
+      color: "#0F2D52",
       bg: "bg-blue-50",
     },
     {
       label: "Produits",
       value: stats.total_products,
-      color: "#8B5CF6",
+      color: "#8f8064",
       bg: "bg-violet-50",
     },
     {
@@ -152,19 +152,19 @@ export default function DashboardPage() {
     {
       label: "Commandes confirmées",
       value: stats.confirmed_orders,
-      color: "#10B981",
+      color: "#52634f",
       bg: "bg-emerald-50",
     },
     {
       label: "Commandes en attente",
       value: stats.pending_orders,
-      color: "#F59E0B",
+      color: "#b8a98c",
       bg: "bg-amber-50",
     },
     {
       label: "Commandes payées",
       value: stats.paid_payments,
-      color: "#10B981",
+      color: "#52634f",
       bg: "bg-emerald-50",
     },
     {
@@ -176,19 +176,19 @@ export default function DashboardPage() {
     {
       label: "Stock total",
       value: stats.total_stock,
-      color: "#06B6D4",
+      color: "#52634f",
       bg: "bg-cyan-50",
     },
     {
       label: "Produits en rupture",
       value: stats.out_of_stock_count,
-      color: "#EF4444",
+      color: "#9b5c58",
       bg: "bg-red-50",
     },
     {
       label: "Stock faible",
       value: stats.low_stock_count,
-      color: "#F59E0B",
+      color: "#b8a98c",
       bg: "bg-amber-50",
     },
   ];

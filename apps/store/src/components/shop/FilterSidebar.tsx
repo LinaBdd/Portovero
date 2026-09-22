@@ -90,16 +90,16 @@ export function FilterSidebar({
   // CLEAR FILTERS
   // ============================================================
 
+  // Le genre est fixé pour le moment (catalogue homme uniquement) :
+  // on ne réinitialise que la catégorie.
   const clearFilters = () => {
     onChange({
-      gender: [],
+      ...filters,
       category: [],
     });
   };
 
-  const hasFilters =
-    filters.gender.length > 0 ||
-    filters.category.length > 0;
+  const hasFilters = filters.category.length > 0;
 
   // ============================================================
   // RENDER
@@ -128,33 +128,10 @@ export function FilterSidebar({
         )}
       </div>
 
-      {/* =========================
-          GENDER
-      ========================== */}
-
-      <div>
-        <h3 className="mb-4 text-sm font-semibold">
-          Gender
-        </h3>
-
-        <div className="space-y-3">
-          <Checkbox
-            label="Men"
-            checked={filters.gender.includes("men")}
-            onChange={() =>
-              toggleFilter("gender", "men")
-            }
-          />
-
-          <Checkbox
-            label="Women"
-            checked={filters.gender.includes("women")}
-            onChange={() =>
-              toggleFilter("gender", "women")
-            }
-          />
-        </div>
-      </div>
+      {/*
+        GENDER : catalogue homme uniquement pour le moment — le filtre
+        femme reviendra dans une prochaine version.
+      */}
 
       {/* =========================
           CATEGORY

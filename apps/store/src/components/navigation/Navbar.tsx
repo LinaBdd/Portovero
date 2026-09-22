@@ -7,8 +7,15 @@ import { DesktopNavigation } from "./DesktopNavigation";
 import { MobileNavigation } from "./MobileNavigation";
 import { NavIcons } from "./NavIcons";
 import { Logo } from "./Logo";
+import type { NavItem } from "./navigation";
 
-export function Navbar() {
+export function Navbar({
+  navigation,
+  brandName,
+}: {
+  navigation: NavItem[];
+  brandName: string;
+}) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -52,15 +59,15 @@ export function Navbar() {
         >
           {/* Mobile menu */}
           <div className="lg:hidden">
-            <MobileNavigation />
+            <MobileNavigation navigation={navigation} />
           </div>
 
           {/* Logo */}
-          <Logo />
+          <Logo brandName={brandName} />
 
           {/* Navigation */}
           <div className="hidden lg:flex flex-1 justify-center">
-            <DesktopNavigation />
+            <DesktopNavigation navigation={navigation} />
           </div>
 
           {/* Icons */}

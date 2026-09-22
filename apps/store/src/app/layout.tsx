@@ -1,45 +1,58 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
 import "./globals.css";
 
-import { Navbar } from "../components/navigation";
+import { Navbar } from "../components/navigation/Navbar";
+import { buildNavigation } from "../components/navigation/navigation";
 import { Footer } from "../components/footer";
+import { getCategories, getSettings } from "../lib/api/site";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const heading = Cormorant_Garamond({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-cormorant",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sans = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
 });
 
-export const metadata: Metadata = {
-  title: "Portovero",
-  description: "Luxury Fashion Store",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+  const brand = settings.brand_name || "Portovero";
 
-export default function RootLayout({
+  return {
+    title: { default: brand, template: `%s — ${brand}` },
+    description: settings.site_description,
+  };
+}
+
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const [settings, categories] = await Promise.all([
+    getSettings(),
+    getCategories(),
+  ]);
+
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${heading.variable} ${sans.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
     >
-      <body className="flex min-h-screen flex-col bg-white">
-        <Navbar />
-
-        <main className="flex-1">{children}</main>
-
-        <Footer />
-
+      <body className="flex min-h-screen flex-col bg-[#f6f4ef] pt-[78px] font-sans">
+        <Navbar
+          navigation={buildNavigation(categories)}
+          brandName={settings.brand_name || "Portovero"}
+        />
+        <div className="flex-1">{children}</div>
+        <Footer settings={settings} />
         <Toaster position="top-right" richColors closeButton duration={2500} />
       </body>
     </html>

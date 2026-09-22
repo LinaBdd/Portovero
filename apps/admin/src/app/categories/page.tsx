@@ -8,6 +8,7 @@ import {
   deleteCategory,
   ApiCategory,
 } from "../../lib/api/categories";
+import { API_URL } from "../../lib/api/config";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -23,10 +24,6 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-
-  const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
  function getImageUrl(path?: string | null) {
   if (!path) return null;
@@ -118,7 +115,7 @@ async function uploadImage(file: File): Promise<string> {
   }
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/admin/upload/image`,
+    `${API_URL}/admin/upload/image`,
     {
       method: "POST",
       headers: {

@@ -57,7 +57,7 @@ export default function CheckoutSuccessPage() {
           </Link>
 
           <Link
-            href="/collections"
+            href="/shop"
             className="flex h-14 items-center justify-center gap-2 rounded-full bg-[#0F2D52] text-white transition hover:bg-[#173F73]"
           >
             <ShoppingBag size={18} />

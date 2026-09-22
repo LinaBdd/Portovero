@@ -1,102 +1,74 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { Container } from "../../components/ui/container";
+import { heading } from "../../lib/fonts";
+import { API_URL } from "../../lib/api/config";
 
-import {
-  fetchActiveCategories,
-  type ApiCategory,
-} from "../../lib/api/categories";
+export const metadata = { title: "Collections — Portovero" };
+export const dynamic = "force-dynamic"; // toujours à jour avec l'admin
 
-import { getImageUrl } from "../../lib/utils";
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  image: string | null;
+};
 
-export default function CollectionsPage() {
-  const [categories, setCategories] = useState<ApiCategory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+async function getCategories(): Promise<Category[]> {
+  try {
+    const res = await fetch(`${API_URL}/categories/active`, { cache: "no-store" });
+    if (!res.ok) return [];
+    return (await res.json()) as Category[];
+  } catch {
+    return [];
+  }
+}
 
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        setLoading(true);
-        setError("");
+function imageUrl(path: string | null) {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
-        const data = await fetchActiveCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Failed to load categories:", error);
-        setError("Impossible de charger les collections.");
-        setCategories([]);
-      } finally {
-        setLoading(false);
-      }
-    }
+// Couleurs de secours (échantillons de tissu) pour les catégories sans image.
+const FABRICS = ["#0F2D52", "#B8A98C", "#5B2A2E", "#52634F", "#2A2926", "#8F8064"];
+const TWILL =
+  "repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 1px, transparent 1px 4px)";
 
-    loadCategories();
-  }, []);
+// 1 catégorie : grande carte · 2 : deux colonnes · 3+ : trois colonnes
+function gridClass(n: number) {
+  if (n <= 1) return "grid-cols-1";
+  if (n === 2) return "grid-cols-1 sm:grid-cols-2";
+  return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+}
+
+export default async function CollectionsPage() {
+  const categories = await getCategories();
+  const single = categories.length === 1;
 
   return (
     <main className="min-h-screen bg-[#F7F3EC] text-[#172B3A]">
-      <Container>
-        {/* Header */}
-        <header className="pb-16 pt-16 sm:pb-20 sm:pt-20 lg:pb-24 lg:pt-24">
-          <div className="max-w-2xl">
-            <p className="mb-5 text-[10px] font-medium uppercase tracking-[0.3em] text-[#B89B5E]">
-              Portovero
-            </p>
+      <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+        <div className="mb-14 max-w-2xl">
+          <p className="mb-4 text-[11px] uppercase tracking-[0.28em] text-[#B89B5E]">
+            Collections
+          </p>
+          <h1
+            className={`${heading.className} text-5xl font-medium leading-[1.05] tracking-[-0.02em] sm:text-6xl`}
+          >
+            Curated for a timeless wardrobe.
+          </h1>
+        </div>
 
-            <h1 className="font-heading text-5xl font-medium tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-              Collections
-            </h1>
-
-            <p className="mt-6 max-w-xl text-sm leading-7 text-[#81786D] sm:text-base">
-              Explore our carefully selected collections and discover pieces
-              designed around timeless, effortless style.
-            </p>
-          </div>
-        </header>
-
-        {/* Loading */}
-        {loading && (
-          <div className="grid gap-8 pb-24 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="animate-pulse overflow-hidden rounded-[24px]"
-              >
-                <div className="aspect-[4/5] bg-[#EDE5DA]" />
-                <div className="px-1 pt-5">
-                  <div className="h-5 w-2/3 rounded bg-[#EDE5DA]" />
-                  <div className="mt-3 h-3 w-5/6 rounded bg-[#EDE5DA]" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Error */}
-        {!loading && error && (
-          <div className="pb-24 pt-10">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!loading && !error && categories.length === 0 && (
-          <div className="pb-24 pt-10">
-            <p className="text-sm text-[#81786D]">
-              No collections available.
-            </p>
-          </div>
-        )}
-
-        {/* Collections */}
-        {!loading && !error && categories.length > 0 && (
-          <section className="grid gap-x-8 gap-y-16 pb-28 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((category) => {
-              const imageUrl = getImageUrl(category.image);
+        {categories.length === 0 ? (
+          <p className="rounded-2xl border border-[#172B3A]/10 bg-white/60 p-10 text-center text-sm text-[#81786D]">
+            Les collections arrivent bientôt.
+          </p>
+        ) : (
+          <div className={`grid gap-6 ${gridClass(categories.length)}`}>
+            {categories.map((category, i) => {
+              const img = imageUrl(category.image);
+              const fabric = FABRICS[i % FABRICS.length];
 
               return (
                 <Link
@@ -104,32 +76,35 @@ export default function CollectionsPage() {
                   href={`/collections/${category.slug}`}
                   className="group block"
                 >
-                  <div className="relative overflow-hidden rounded-[24px] bg-[#EDE5DA]">
-                    <div className="aspect-[4/5]">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={category.name}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.035]"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-sm text-[#9B9184]">
-                          No image
-                        </div>
-                      )}
-                    </div>
+                  <div
+                    className={`relative overflow-hidden rounded-[28px] ${
+                      single ? "aspect-[16/9]" : "aspect-[4/5]"
+                    }`}
+                    style={{
+                      backgroundColor: fabric,
+                      backgroundImage: img ? undefined : TWILL,
+                    }}
+                  >
+                    {img && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={img}
+                        alt={category.name}
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
+                      />
+                    )}
 
-                    {/* subtle overlay */}
-                    <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent opacity-70" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
 
-                    <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-7">
-                      <h2 className="font-heading text-2xl font-medium text-white sm:text-3xl">
+                    <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
+                      <h2
+                        className={`${heading.className} text-3xl font-medium sm:text-4xl`}
+                      >
                         {category.name}
                       </h2>
-
                       {category.description && (
-                        <p className="mt-2 max-w-sm text-xs leading-5 text-white/80">
+                        <p className="mt-2 max-w-sm text-sm leading-6 text-white/85">
                           {category.description}
                         </p>
                       )}
@@ -137,20 +112,19 @@ export default function CollectionsPage() {
                   </div>
 
                   <div className="mt-5 flex items-center justify-between px-1">
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#81786D]">
-                      Discover collection
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-[#81786D]">
+                      Découvrir
                     </span>
-
-                    <span className="text-sm text-[#172B3A] transition-transform duration-300 group-hover:translate-x-1">
+                    <span className="text-[#172B3A] transition-transform duration-300 group-hover:translate-x-1">
                       →
                     </span>
                   </div>
                 </Link>
               );
             })}
-          </section>
+          </div>
         )}
-      </Container>
+      </div>
     </main>
   );
 }

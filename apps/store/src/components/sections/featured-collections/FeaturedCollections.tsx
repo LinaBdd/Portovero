@@ -1,46 +1,35 @@
 import { Section } from "../../ui/section";
-import { H2, Lead } from "../../ui/typography";
+import { H2 } from "../../ui/typography";
 
 import { CollectionCard } from "./CollectionCard";
-import { fetchFeaturedCollections } from "../../../lib/api/collections";
+import { categoryHref, categoryImage } from "../../../lib/api/categories";
+import { getCategories } from "../../../lib/api/site";
 
-
+/** Collections en vedette : les catégories actives (avec image) gérées depuis l'admin. */
 export async function FeaturedCollections() {
+  const categories = (await getCategories())
+    .filter((category) => category.image)
+    .slice(0, 4);
 
-  const collections =
-    await fetchFeaturedCollections();
-
+  if (categories.length === 0) return null;
 
   return (
     <Section>
-
       <div className="mb-16 text-center">
-
-        <H2>
-          Featured Collections
-        </H2>
-
-        <Lead>
-          Explore our timeless wardrobe.
-        </Lead>
-
+        <H2>Collections</H2>
       </div>
-
 
       <div className="grid gap-8 md:grid-cols-2">
-
-         {collections.map((collection) => (
-           <CollectionCard
-               key={collection.id}
-               title={collection.title}
-               subtitle={collection.description ?? ""}
-               image={collection.image ?? ""}
-               href={`/collections/${collection.slug}`}
-             />
-           ))}
-
+        {categories.map((category) => (
+          <CollectionCard
+            key={category.id}
+            title={category.name}
+            subtitle={category.description ?? ""}
+            image={categoryImage(category.image) ?? ""}
+            href={categoryHref(category.slug)}
+          />
+        ))}
       </div>
-
     </Section>
   );
 }

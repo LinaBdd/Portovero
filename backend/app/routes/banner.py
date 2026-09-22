@@ -6,6 +6,8 @@ from fastapi import (
 
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_admin
+
 from app.database.session import get_db
 
 from app.schemas.banner import (
@@ -32,6 +34,7 @@ router = APIRouter(
 @router.post(
     "/create",
     response_model=BannerRead,
+    dependencies=[Depends(get_current_admin)],
 )
 def create(
     data: BannerCreate,
@@ -46,6 +49,7 @@ def create(
 @router.get(
     "/",
     response_model=list[BannerRead],
+    dependencies=[Depends(get_current_admin)],
 )
 def read_all(
     db: Session = Depends(get_db),
@@ -88,6 +92,7 @@ def read(
 @router.put(
     "/{banner_id}",
     response_model=BannerRead,
+    dependencies=[Depends(get_current_admin)],
 )
 def update(
     banner_id: int,
@@ -111,6 +116,7 @@ def update(
 
 @router.delete(
     "/{banner_id}",
+    dependencies=[Depends(get_current_admin)],
 )
 def delete(
     banner_id: int,

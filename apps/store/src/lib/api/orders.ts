@@ -1,60 +1,33 @@
-import { apiClient } from "./client";
+import { API_URL } from "./config";
 
-export interface ApiOrder {
-  id: number;
-  user_id: number;
-  first_name: string;
-  last_name: string;
-  phone: string;
-  email: string | null;
+export async function createGuestOrder(data: unknown) {
+  const res = await fetch(`${API_URL}/orders/guest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 
-  address: string;
-  wilaya: string;
-  commune: string;
+  if (!res.ok) {
+    let message = "Impossible de créer la commande.";
 
-  shipping_method: string;
-  subtotal: string | number;
-  shipping_cost: string | number;
-  discount: string | number;
-  total: string | number;
+    try {
+      const body = await res.json();
 
-  status: string;
-  payment_method: string;
-  payment_status: string;
-
-  coupon_code: string | null;
-  notes: string | null;
-
-  created_at: string;
-  updated_at?: string;
-}
-
-export function fetchMyOrders() {
-  return apiClient<ApiOrder[]>("/orders/my-orders");
-}
-
-export function fetchOrder(orderId: number) {
-  return apiClient<ApiOrder>(`/orders/${orderId}`);
-}
-
-export async function createGuestOrder(data:any){
-
-  const res = await fetch(
-    "http://localhost:8000/orders/guest",
-    {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-      },
-      body:JSON.stringify(data),
+      if (typeof body.detail === "string") {
+        message = body.detail;
+      } else if (Array.isArray(body.detail)) {
+        // 422 : champ + raison
+        message = body.detail
+          .map((d: { loc?: (string | number)[]; msg: string }) =>
+            `${(d.loc ?? []).slice(1).join(".")} : ${d.msg}`
+          )
+          .join(" · ");
+      }
+    } catch {
+      // réponse non JSON : on garde le message par défaut
     }
-  );
 
-
-  if(!res.ok){
-    throw new Error(
-      "Guest order failed"
-    );
+    throw new Error(message);
   }
 
 

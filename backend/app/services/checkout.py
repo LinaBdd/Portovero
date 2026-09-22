@@ -11,6 +11,7 @@ from app.models.payment import Payment
 from app.models.product_variant import ProductVariant
 from app.models.shipping_method import ShippingMethod
 
+from app.services.shipping_price import get_shipping_price
 from app.schemas.checkout import CheckoutRequest
 
 
@@ -97,7 +98,7 @@ def checkout(
 
         subtotal += variant.price * item.quantity
 
-    shipping_cost = shipping.base_price
+    shipping_cost = get_shipping_price(db, address.wilaya_id, shipping)
     total = subtotal + shipping_cost - discount
 
     try:

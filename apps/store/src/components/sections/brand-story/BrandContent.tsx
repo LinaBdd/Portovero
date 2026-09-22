@@ -1,28 +1,33 @@
+import Link from "next/link";
+
 import { Button } from "../../ui/button";
 import { H2, Lead } from "../../ui/typography";
 
-export function BrandContent() {
+type Props = {
+  eyebrow?: string;
+  title?: string;
+  text?: string;
+  ctaLabel?: string;
+};
+
+export function BrandContent({ eyebrow, title, text, ctaLabel }: Props) {
   return (
     <div className="space-y-8">
+      {eyebrow && (
+        <span className="text-sm uppercase tracking-[0.3em] text-neutral-500">
+          {eyebrow}
+        </span>
+      )}
 
-      <span className="text-sm uppercase tracking-[0.3em] text-neutral-500">
-        Our Story
-      </span>
+      {title && <H2>{title}</H2>}
 
-      <H2>
-        Designed for timeless elegance.
-      </H2>
+      {text && <Lead>{text}</Lead>}
 
-      <Lead>
-        Portovero celebrates Mediterranean simplicity with
-        carefully selected pieces that combine premium
-        craftsmanship, comfort and effortless sophistication.
-      </Lead>
-
-      <Button size="lg">
-        Discover Our Story
-      </Button>
-
+      {ctaLabel && (
+        <Button size="lg" asChild>
+          <Link href="/about">{ctaLabel}</Link>
+        </Button>
+      )}
     </div>
   );
 }

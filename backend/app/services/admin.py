@@ -21,6 +21,7 @@ from app.models.user import User
 from app.schemas.admin import (
     AdminProductCreate,
     AdminProductUpdate,
+    ColorUpdate,
     DashboardStats,
     MonthlyStats,
     PaymentStats,
@@ -196,6 +197,12 @@ def _set_variants(
         if variant.id is not None
     }
 
+    current_by_size = {
+        variant.size_id: variant
+        for variant in product_color.variants
+        if variant.id is not None
+    }
+
     incoming_ids: set[int] = set()
     seen_sizes: set[int] = set()
 
@@ -241,15 +248,25 @@ def _set_variants(
 
         else:
 
-            variant = ProductVariant(
-                sku=_variant_sku(
-                    product.sku,
-                    product_color.color_id,
-                    data.size_id,
-                )
-            )
+            # Même taille qu'une variante existante : on la met à jour
+            # (on ne la supprime pas, pour garder l'historique des commandes).
+            variant = current_by_size.get(data.size_id)
 
-            product_color.variants.append(variant)
+            if variant is not None:
+
+                incoming_ids.add(variant.id)
+
+            else:
+
+                variant = ProductVariant(
+                    sku=_variant_sku(
+                        product.sku,
+                        product_color.color_id,
+                        data.size_id,
+                    )
+                )
+
+                product_color.variants.append(variant)
 
         # ----------------------------------------------------
         # Update variant
@@ -506,7 +523,9 @@ def update_product_admin(
         exclude_unset=True,
         exclude={
             "category_ids",
+            "category_id",
             "colors",
+            "variants",
             "stock",
         },
     )
@@ -544,9 +563,19 @@ def update_product_admin(
     # 2. CATEGORIES
     # ========================================================
 
-    if "category_ids" in payload.model_fields_set:
+    if (
+        "category_ids" in payload.model_fields_set
+        or "category_id" in payload.model_fields_set
+    ):
 
-        category_ids = payload.category_ids or []
+        if "category_ids" in payload.model_fields_set:
+            category_ids = payload.category_ids or []
+        else:
+            category_ids = (
+                [payload.category_id]
+                if payload.category_id
+                else []
+            )
 
         if len(category_ids) != len(
             set(category_ids)
@@ -567,9 +596,46 @@ def update_product_admin(
     # 3. COLORS
     # ========================================================
 
-    if "colors" in payload.model_fields_set:
+    if (
+        "colors" in payload.model_fields_set
+        or "variants" in payload.model_fields_set
+    ):
 
-        color_updates = payload.colors or []
+        if "colors" in payload.model_fields_set:
+            color_updates = payload.colors or []
+        else:
+            # Seules les variantes sont envoyées : on garde les couleurs actuelles.
+            color_updates = [
+                ColorUpdate(id=color.id, color_id=color.color_id)
+                for color in product.colors
+            ]
+
+        # Variantes envoyées à plat -> rangées sous leur couleur.
+        if payload.variants is not None:
+
+            by_color: dict[int, list] = {}
+
+            for variant_data in payload.variants:
+                by_color.setdefault(
+                    variant_data.color_id, []
+                ).append(variant_data)
+
+            unknown = set(by_color) - {
+                item.color_id for item in color_updates
+            }
+
+            if unknown:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(
+                        "Variants reference a colour that is "
+                        "not attached to this product"
+                    ),
+                )
+
+            for item in color_updates:
+                if item.variants is None:
+                    item.variants = by_color.get(item.color_id, [])
 
         # ----------------------------------------------------
         # Validate color IDs

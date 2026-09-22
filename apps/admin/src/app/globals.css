@@ -94,10 +94,9 @@
   --color-danger: var(--danger);
   --color-danger-background: var(--danger-background);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-
-  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: var(--font-inter), Arial, sans-serif;
+  --font-heading: var(--font-cormorant), Georgia, serif;
+  --font-serif: var(--font-cormorant), Georgia, serif;
 }
 
 
@@ -125,7 +124,7 @@ body {
   color: var(--foreground);
 
   font-family:
-    var(--font-geist-sans),
+    var(--font-inter),
     Arial,
     Helvetica,
     sans-serif;
@@ -151,7 +150,7 @@ h6 {
   margin: 0;
 
   font-family:
-    "Cormorant Garamond",
+    var(--font-cormorant),
     Georgia,
     serif;
 
@@ -273,7 +272,7 @@ textarea::placeholder {
 
 .font-display {
   font-family:
-    "Cormorant Garamond",
+    var(--font-cormorant),
     Georgia,
     serif;
 }

@@ -1,4 +1,5 @@
 import { apiClient, clearAdminSession } from "./client";
+import { API_URL as BASE_URL } from "./config";
 
 /* ============================================================
    COLORS
@@ -334,10 +335,6 @@ export async function uploadProductImage(
   const formData = new FormData();
 
   formData.append("file", file);
-
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ??
-    "http://localhost:8000";
 
   const token =
     typeof window !== "undefined"

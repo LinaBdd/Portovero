@@ -550,12 +550,13 @@ class VariantStockUpdate(BaseModel):
     stock: int = Field(ge=0)
 
 @router.patch(
-    "/admin/product-variants/{variant_id}/stock"
+    "/product-variants/{variant_id}/stock"
 )
 def update_variant_stock_endpoint(
     variant_id: int,
     data: VariantStockUpdate,
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_admin),
 ):
     return update_variant_stock(
         db,
@@ -569,15 +570,10 @@ def update_variant_stock_endpoint(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-
-@router.delete(
-    "/orders/{order_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    response_model=None,
-)
 def delete_order(
     order_id: int,
     db: Session = Depends(get_db),
+    _: dict = Depends(get_current_admin),
 ):
     order = (
         db.query(Order)

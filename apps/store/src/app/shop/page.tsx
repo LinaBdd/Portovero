@@ -19,8 +19,10 @@ export type SortOption =
   | "price_asc"
   | "price_desc";
 
+// Catalogue homme uniquement pour le moment (le filtre femme arrive dans une
+// prochaine version) : le genre est fixé et n'est pas exposé dans l'UI.
 const DEFAULT_FILTERS: ShopFilters = {
-  gender: [],
+  gender: ["men"],
   category: [],
 };
 
@@ -42,14 +44,16 @@ export default function ShopPage() {
     setFilters(newFilters);
   };
 
-  const activeChips = [
-    ...filters.gender.map((v) => ({ type: "gender" as const, value: v })),
-    ...filters.category.map((v) => ({ type: "category" as const, value: v })),
-  ];
+  // Le genre est fixé pour le moment (voir DEFAULT_FILTERS) : seuls les
+  // filtres de catégorie sont affichés comme puces actives/effaçables.
+  const activeChips = filters.category.map((v) => ({
+    type: "category" as const,
+    value: v,
+  }));
 
   const hasFilters = activeChips.length > 0 || searchValue.trim().length > 0;
 
-  const removeChip = (type: "gender" | "category", value: string) => {
+  const removeChip = (type: "category", value: string) => {
     setFilters((prev) => ({
       ...prev,
       [type]: prev[type].filter((v) => v !== value),

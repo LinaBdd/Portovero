@@ -121,6 +121,7 @@ def create(
 ):
     return create_order(
         db=db,
+        user_id=current_user.id,
         data=order,
     )
 

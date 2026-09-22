@@ -29,3 +29,7 @@ from .commune import Commune
 from .payment import Payment
 from .notification import Notification
 from .shipping_rate import ShippingRate
+
+from .site_setting import SiteSetting
+from .content_item import ContentItem
+from .contact_message import ContactMessage

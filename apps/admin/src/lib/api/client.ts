@@ -1,8 +1,4 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-
-  console.log("🔧 NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
-  console.log("🌐 BASE_URL:", BASE_URL);
+import { API_URL as BASE_URL } from "./config";
 
 export class ApiError extends Error {
   constructor(
@@ -76,8 +72,6 @@ export async function apiClient<T>(
     : null;
 
   const url = `${BASE_URL}${path}`;
-
-  console.log("🌐 API REQUEST:", url);
 
   try {
     const res = await fetch(url, {
@@ -158,8 +152,6 @@ export async function uploadFile<T>(
   formData.append(fieldName, file);
 
   const url = `${BASE_URL}${path}`;
-
-  console.log("📤 UPLOAD:", url);
 
   const res = await fetch(url, {
     method: "POST",

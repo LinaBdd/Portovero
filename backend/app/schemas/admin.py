@@ -67,7 +67,11 @@ class AdminProductUpdate(BaseModel):
     is_featured: bool | None = None
     is_new: bool | None = None
     category_ids: list[int] | None = None
+    # Le formulaire admin envoie une seule catégorie et les variantes « à plat »
+    # (comme à la création) : on accepte les deux formats.
+    category_id: int | None = None
     colors: list["ColorUpdate"] | None = None
+    variants: list["VariantUpdate"] | None = None
 
 
 class ImageUpdate(BaseModel):

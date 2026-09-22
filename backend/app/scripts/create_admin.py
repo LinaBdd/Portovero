@@ -1,6 +1,11 @@
+import os
 from app.database.session import SessionLocal
 from app.models.user import User
 from app.auth.hashing import hash_password
+
+
+ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
+ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]
 
 
 def create_admin():
@@ -9,7 +14,7 @@ def create_admin():
     try:
         existing = (
             db.query(User)
-            .filter(User.email == "boudaoud.lina05@gmail.com")
+            .filter(User.email == ADMIN_EMAIL)
             .first()
         )
 
@@ -19,7 +24,7 @@ def create_admin():
             existing.is_active = True
 
             # Si tu veux également réinitialiser le mot de passe
-            existing.password_hash = hash_password("Admin123!")
+            existing.password_hash = hash_password(ADMIN_PASSWORD)
 
             db.commit()
 
@@ -30,8 +35,8 @@ def create_admin():
             first_name="Lina",
             last_name="Boudaoud",
             phone="0540154691",
-            email="boudaoud.lina05@gmail.com",
-            password_hash=hash_password("Admin123!"),
+            email=ADMIN_EMAIL,
+            password_hash=hash_password(ADMIN_PASSWORD),
             is_registered=True,
             is_admin=True,
             is_active=True,

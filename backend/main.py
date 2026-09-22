@@ -30,7 +30,8 @@ from app.routes.newsletter import router as newsletter_router
 from app.routes.notification import router as notification_router
 from app.routes.banner import router as banner_router
 from app.routes.upload import router as upload_router
-from app.routes.shipping_method import shipping_rates_router 
+from app.routes.shipping_method import shipping_rates_router
+from app.routes.site import router as site_router
 
 
 app = FastAPI(
@@ -84,3 +85,4 @@ app.include_router(upload_router)
 app.include_router(notification_router)
 app.include_router(banner_router)
 app.include_router(shipping_rates_router)
+app.include_router(site_router)

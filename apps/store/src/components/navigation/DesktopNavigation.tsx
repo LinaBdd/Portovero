@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { navigation } from "./navigation";
+import type { NavItem } from "./navigation";
 
-export function DesktopNavigation() {
+export function DesktopNavigation({ navigation }: { navigation: NavItem[] }) {
   return (
     <nav className="hidden lg:block">
 
@@ -42,7 +42,7 @@ export function DesktopNavigation() {
               />
             </Link>
 
-            {item.children && (
+            {item.children && item.children.length > 0 && (
 
               <div
                 className="

@@ -34,6 +34,7 @@ from app.services.product import (
 )
 
 from app.auth.dependencies import get_current_admin
+from app.models.product_variant import ProductVariant
 
 from app.models.product import Product
 from app.models.category import Category
@@ -201,10 +202,19 @@ def decrease_variant_stock(
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin),
 ):
+    current = (
+        db.query(ProductVariant)
+        .filter(ProductVariant.id == variant_id)
+        .first()
+    )
+
+    if current is None:
+        raise HTTPException(status_code=404, detail="Variant not found.")
+
     variant = update_variant_stock(
         db=db,
         variant_id=variant_id,
-        quantity_to_remove=quantity,
+        new_stock=max(current.stock - quantity, 0),
     )
 
     db.commit()

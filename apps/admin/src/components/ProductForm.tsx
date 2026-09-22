@@ -20,6 +20,13 @@ import {
 } from "../lib/api/products";
 
 import { ApiError } from "../lib/api/client";
+import { API_URL } from "../lib/api/config";
+
+/** Les images enregistrées sont servies par le backend, pas par l'admin. */
+function previewSrc(url: string): string {
+  if (/^(blob:|data:|https?:\/\/)/.test(url)) return url;
+  return `${API_URL}${url.startsWith("/") ? url : `/${url}`}`;
+}
 
 /**
  * ============================================================
@@ -1349,9 +1356,9 @@ export function ProductForm({
                   {selectedColor.image_url && (
                     <div className="mt-4">
                       <img
-                        src={
+                        src={previewSrc(
                           selectedColor.image_url
-                        }
+                        )}
                         alt={
                           color?.name ??
                           "Image produit"

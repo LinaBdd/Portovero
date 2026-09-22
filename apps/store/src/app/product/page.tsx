@@ -1,6 +1,3 @@
-import { Navbar } from "../../components/navigation";
-import { Footer } from "../../components/footer";
-
 import {
   CollectionBanner,
   ProductGrid,
@@ -10,8 +7,6 @@ import {
 export default function CollectionsPage() {
   return (
     <>
-      <Navbar />
-
       <main>
 
         <CollectionBanner />
@@ -21,8 +16,6 @@ export default function CollectionsPage() {
         <ProductGrid />
 
       </main>
-
-      <Footer />
     </>
   );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import type { Product } from "../../types/product";
 
-import { useProductImages } from "../../hooks/useProductImages";
+import { getImageUrl } from "../../lib/utils";
 
 import { ProductActions } from "./ProductActions";
 import { ProductImage } from "./ProductImage";
@@ -17,18 +17,11 @@ interface ProductCardProps {
 export function ProductCard({
   product,
 }: ProductCardProps) {
-  /*
-   * Load product images from:
-   *
-   * /product-colors/product/{product_id}
-   *              ↓
-   * /product-images/color/{product_color_id}
-   */
-  const {
-    image,
-    hoverImage,
-    loading: imagesLoading,
-  } = useProductImages(Number(product.id));
+  // L'image principale est déjà résolue par adaptToListProduct/getFullProduct
+  // (via les couleurs du produit) : pas besoin d'un appel réseau ici.
+  const image = getImageUrl(product.images?.[0]);
+  const hoverImage = null;
+  const imagesLoading = false;
 
   /*
    * The API returns prices as strings.
@@ -121,20 +114,7 @@ export function ProductCard({
           </h3>
         </Link>
 
-        {/* SKU */}
-
-        {product.sku && (
-          <p
-            className="
-              text-xs
-              uppercase
-              tracking-widest
-              text-neutral-400
-            "
-          >
-            {product.sku}
-          </p>
-        )}
+        
 
         {/* =========================
             PRICE
@@ -164,15 +144,7 @@ export function ProductCard({
             STOCK
         ========================== */}
 
-        {isOutOfStock ? (
-          <p className="text-sm text-red-500">
-            Sold out
-          </p>
-        ) : (
-          <p className="text-sm text-neutral-500">
-            {product.stock} en stock
-          </p>
-        )}
+        {isOutOfStock && <p className="text-sm text-red-500">Épuisé</p>}
 
       </div>
 

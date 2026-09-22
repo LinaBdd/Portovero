@@ -11,9 +11,10 @@ export default function Home() {
     <main className="min-h-screen bg-background">
       <Hero />
       <BestSellers />
-      <BrandStory />
+      
       <WhyPortovero />
       <Testimonials />
+      <BrandStory />
     </main>
   );
 }

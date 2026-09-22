@@ -20,9 +20,8 @@ export function CartSummary() {
     0
   );
 
-  const shipping = subtotal > 0 ? 0 : 0;
-
-  const total = subtotal + shipping;
+  // Les frais réels dépendent de la wilaya : ils sont calculés au checkout.
+  const total = subtotal;
 
   return (
     <aside className="h-fit rounded-3xl bg-white p-8 shadow-sm">
@@ -48,8 +47,8 @@ export function CartSummary() {
             Livraison
           </span>
 
-          <span className="font-medium text-green-600">
-            Gratuite
+          <span className="text-sm text-neutral-500">
+            Calculée à la commande
           </span>
         </div>
 

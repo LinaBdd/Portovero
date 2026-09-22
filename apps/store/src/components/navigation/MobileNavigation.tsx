@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { navigation } from "./navigation";
+import type { NavItem } from "./navigation";
 
-export function MobileNavigation() {
+export function MobileNavigation({ navigation }: { navigation: NavItem[] }) {
   const [open, setOpen] = useState(false);
 
   return (
