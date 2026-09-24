@@ -9,6 +9,14 @@ class CommuneBase(BaseModel):
 
     name: str
 
+    code: int | None = None
+
+    name_ar: str | None = None
+
+    daira: str | None = None
+
+    daira_ar: str | None = None
+
     postal_code: str | None = None
 
 
@@ -20,6 +28,15 @@ class CommuneUpdate(BaseModel):
     wilaya_id: int | None = None
 
     name: str | None = None
+
+    code: int | None = None
+
+
+    name_ar: str | None = None
+
+    daira: str | None = None
+
+    daira_ar: str | None = None
 
     postal_code: str | None = None
 

@@ -11,6 +11,7 @@ from sqlalchemy.orm import (
 
 from app.database.core import Base
 
+
 class Commune(Base):
     __tablename__ = "communes"
 
@@ -19,9 +20,9 @@ class Commune(Base):
         index=True,
     )
 
-    code: Mapped[int] = mapped_column(
+    code: Mapped[int | None] = mapped_column(
         unique=True,
-        nullable=False,
+        nullable=True,
     )
 
     wilaya_id: Mapped[int] = mapped_column(
@@ -37,19 +38,19 @@ class Commune(Base):
         nullable=False,
     )
 
-    name_ar: Mapped[str] = mapped_column(
+    name_ar: Mapped[str | None] = mapped_column(
         String(100),
-        nullable=False,
+        nullable=True,
     )
 
-    daira: Mapped[str] = mapped_column(
+    daira: Mapped[str | None] = mapped_column(
         String(100),
-        nullable=False,
+        nullable=True,
     )
 
-    daira_ar: Mapped[str] = mapped_column(
+    daira_ar: Mapped[str | None] = mapped_column(
         String(100),
-        nullable=False,
+        nullable=True,
     )
 
     postal_code: Mapped[str | None] = mapped_column(
