@@ -72,8 +72,8 @@ export function mediaUrl(path?: string | null): string | null {
 }
 
 /** Remplace {year} dans un texte éditable. */
-export function withYear(text: string): string {
-  return text.replace("{year}", String(new Date().getFullYear()));
+export function withYear(text?: string): string {
+  return (text ?? "").replace("{year}", String(new Date().getFullYear()));
 }
 
 /** Paragraphes séparés par une ligne vide. */

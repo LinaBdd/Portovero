@@ -22,7 +22,7 @@ export default async function ContactPage() {
       icon: Phone,
       label: "Phone",
       value: settings.contact_phone,
-      href: `tel:${settings.contact_phone.replace(/\s/g, "")}`,
+      href: `tel:${(settings.contact_phone ?? "").replace(/\s/g, "")}`,
     },
     {
       icon: MapPin,

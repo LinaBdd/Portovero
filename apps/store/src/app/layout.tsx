@@ -8,7 +8,7 @@ import { Navbar } from "../components/navigation/Navbar";
 import { buildNavigation } from "../components/navigation/navigation";
 import { Footer } from "../components/footer";
 import { getCategories, getSettings } from "../lib/api/site";
-
+export const dynamic = "force-dynamic";
 const heading = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600"],

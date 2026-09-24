@@ -1,5 +1,8 @@
 import { API_URL } from "./config";
 
+import { apiClient } from "./client";
+
+
 export async function createGuestOrder(data: unknown) {
   const res = await fetch(`${API_URL}/orders/guest`, {
     method: "POST",
@@ -32,4 +35,29 @@ export async function createGuestOrder(data: unknown) {
 
 
   return res.json();
+}
+
+export interface ApiOrderItem {
+  id: number;
+  product_name: string;
+  color: string | null;
+  size: string | null;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
+}
+
+export interface ApiOrder {
+  id: number;
+  status: string;
+  payment_status?: string;
+  subtotal?: string | number;
+  shipping_cost?: string | number;
+  total: string | number;
+  created_at: string;
+  items?: ApiOrderItem[];
+}
+
+export function fetchMyOrders() {
+  return apiClient<ApiOrder[]>("/orders/my-orders");
 }
