@@ -34,9 +34,10 @@ export default function CheckoutPage() {
   const [wilayas, setWilayas] = useState<ApiWilaya[]>([]);
   const [communes, setCommunes] = useState<ApiCommune[]>([]);
 
-  const [shippingMethods, setShippingMethods] = useState<
-    ApiShippingMethod[]
-  >([]);
+  const [shippingMethods, setShippingMethods] = useState<ApiShippingMethod[]>(
+    []
+  );
+  const [loadingShippingMethods, setLoadingShippingMethods] = useState(true);
 
   const [shippingRates, setShippingRates] = useState<ApiShippingRate[]>([]);
 
@@ -45,6 +46,8 @@ export default function CheckoutPage() {
   );
 
   const [shippingRatesLoading, setShippingRatesLoading] = useState(false);
+
+  const [initError, setInitError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -59,12 +62,19 @@ export default function CheckoutPage() {
   // CHARGEMENT INITIAL
   // --------------------------------------------------
 
-  useEffect(() => {
+  function loadInitialData() {
+    setInitError(null);
+
     fetchWilayas()
       .then(setWilayas)
       .catch((error) => {
         console.error("WILAYAS ERROR:", error);
+        setInitError(
+          "Impossible de charger les wilayas. Vérifie ta connexion et réessaie."
+        );
       });
+
+    setLoadingShippingMethods(true);
 
     fetchShippingMethods()
       .then((methods) => {
@@ -76,7 +86,17 @@ export default function CheckoutPage() {
       })
       .catch((error) => {
         console.error("SHIPPING METHODS ERROR:", error);
+        setInitError(
+          "Impossible de charger les méthodes de livraison. Vérifie ta connexion et réessaie."
+        );
+      })
+      .finally(() => {
+        setLoadingShippingMethods(false);
       });
+  }
+
+  useEffect(() => {
+    loadInitialData();
   }, []);
 
   // --------------------------------------------------
@@ -153,8 +173,16 @@ export default function CheckoutPage() {
   }, [items]);
 
   // --------------------------------------------------
-  // TARIF DE LIVRAISON SÉLECTIONNÉ
+  // MÉTHODE + TARIF DE LIVRAISON SÉLECTIONNÉS
   // --------------------------------------------------
+
+  const selectedMethod = useMemo(() => {
+    if (!shippingMethodId) return null;
+
+    return shippingMethods.find(
+      (method: ApiShippingMethod) => method.id === shippingMethodId
+    ) ?? null;
+  }, [shippingMethods, shippingMethodId]);
 
   const selectedShippingRate = useMemo(() => {
     if (!shippingMethodId) {
@@ -170,10 +198,14 @@ export default function CheckoutPage() {
 
   // --------------------------------------------------
   // PRIX LIVRAISON
+  // Tarif spécifique à la wilaya s'il existe, sinon le prix de base
+  // de la méthode — même logique que get_shipping_price côté backend.
   // --------------------------------------------------
 
   const shippingPrice = selectedShippingRate
     ? Number(selectedShippingRate.price)
+    : selectedMethod
+    ? Number(selectedMethod.base_price)
     : 0;
 
   // --------------------------------------------------
@@ -201,14 +233,6 @@ export default function CheckoutPage() {
 
     if (!shippingMethodId) {
       alert("Merci de sélectionner une méthode de livraison.");
-      return;
-    }
-
-    // Vérifier qu'un tarif existe pour cette combinaison
-    if (!selectedShippingRate) {
-      alert(
-        "Cette méthode de livraison n'est pas disponible pour la wilaya sélectionnée."
-      );
       return;
     }
 
@@ -279,7 +303,9 @@ export default function CheckoutPage() {
       console.error("CHECKOUT ERROR:", error);
 
       alert(
-        "Impossible de créer la commande. Vérifie les informations et réessaie."
+        error instanceof Error
+          ? error.message
+          : "Impossible de créer la commande. Vérifie les informations et réessaie."
       );
     } finally {
       setLoading(false);
@@ -292,9 +318,20 @@ export default function CheckoutPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-16">
-      <h1 className="mb-12 text-5xl font-serif">
-        Checkout
-      </h1>
+      <h1 className="mb-12 text-5xl font-serif">Checkout</h1>
+
+      {initError && (
+        <div className="mb-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {initError}{" "}
+          <button
+            type="button"
+            onClick={loadInitialData}
+            className="ml-2 underline"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
 
       <div className="grid gap-16 lg:grid-cols-[2fr_1fr]">
         {/* =====================================================
@@ -342,7 +379,7 @@ export default function CheckoutPage() {
                 value={form.phone}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "").slice(0, 10);
-              
+
                   setForm((prev) => ({
                     ...prev,
                     phone: value,
@@ -358,9 +395,7 @@ export default function CheckoutPage() {
           -------------------------------------------------- */}
 
           <section>
-            <h2 className="mb-6 text-2xl font-semibold">
-              Adresse
-            </h2>
+            <h2 className="mb-6 text-2xl font-semibold">Adresse</h2>
 
             <div className="space-y-6">
               {/* Wilaya */}
@@ -372,15 +407,10 @@ export default function CheckoutPage() {
                 onChange={handleChange}
                 className="w-full rounded-xl border p-4"
               >
-                <option value="">
-                  Sélectionner une wilaya
-                </option>
+                <option value="">Sélectionner une wilaya</option>
 
                 {wilayas.map((wilaya) => (
-                  <option
-                    key={wilaya.id}
-                    value={wilaya.id}
-                  >
+                  <option key={wilaya.id} value={wilaya.id}>
                     {wilaya.code} - {wilaya.name}
                   </option>
                 ))}
@@ -403,10 +433,7 @@ export default function CheckoutPage() {
                 </option>
 
                 {communes.map((commune) => (
-                  <option
-                    key={commune.id}
-                    value={commune.id}
-                  >
+                  <option key={commune.id} value={commune.id}>
                     {commune.name}
                   </option>
                 ))}
@@ -430,24 +457,32 @@ export default function CheckoutPage() {
           -------------------------------------------------- */}
 
           <section>
-            <h2 className="mb-6 text-2xl font-semibold">
-              Livraison
-            </h2>
+            <h2 className="mb-6 text-2xl font-semibold">Livraison</h2>
 
-            {shippingMethods.length === 0 ? (
+            {loadingShippingMethods ? (
               <p className="text-neutral-500">
                 Chargement des méthodes de livraison...
               </p>
+            ) : shippingMethods.length === 0 ? (
+              <p className="text-neutral-500">
+                Aucune méthode de livraison disponible pour le moment.
+              </p>
             ) : (
               <div className="space-y-3">
-                {shippingMethods.map((method) => {
+                {shippingMethods.map((method: ApiShippingMethod) => {
                   const rate = shippingRates.find(
                     (shippingRate) =>
                       shippingRate.shipping_method_id === method.id
                   );
 
-                  const isSelected =
-                    shippingMethodId === method.id;
+                  // Prix effectif : le tarif spécifique à la wilaya, sinon
+                  // le prix de base de la méthode (même logique que le
+                  // backend, get_shipping_price).
+                  const effectivePrice = rate
+                    ? Number(rate.price)
+                    : Number(method.base_price);
+
+                  const isSelected = shippingMethodId === method.id;
 
                   return (
                     <label
@@ -463,21 +498,13 @@ export default function CheckoutPage() {
                           type="radio"
                           name="shippingMethod"
                           checked={isSelected}
-                          onChange={() =>
-                            setShippingMethodId(method.id)
-                          }
-                          disabled={
-                            !form.wilayaId ||
-                            shippingRatesLoading ||
-                            !rate
-                          }
+                          onChange={() => setShippingMethodId(method.id)}
+                          disabled={!form.wilayaId || shippingRatesLoading}
                           className="h-4 w-4 accent-[#0F2D52]"
                         />
 
                         <div>
-                          <p className="font-medium">
-                            {method.name}
-                          </p>
+                          <p className="font-medium">{method.name}</p>
 
                           {method.description && (
                             <p className="text-sm text-neutral-500">
@@ -486,11 +513,8 @@ export default function CheckoutPage() {
                           )}
 
                           <p className="text-sm text-neutral-400">
-                            Livraison estimée :{" "}
-                            {method.estimated_days} jour
-                            {method.estimated_days > 1
-                              ? "s"
-                              : ""}
+                            Livraison estimée : {method.estimated_days} jour
+                            {method.estimated_days > 1 ? "s" : ""}
                           </p>
                         </div>
                       </div>
@@ -498,17 +522,11 @@ export default function CheckoutPage() {
                       {/* Prix */}
 
                       <span className="font-semibold">
-                        {!form.wilayaId ? (
-                          "Sélectionnez une wilaya"
-                        ) : shippingRatesLoading ? (
-                          "Chargement..."
-                        ) : rate ? (
-                          `${Number(rate.price).toLocaleString(
-                            "fr-FR"
-                          )} DA`
-                        ) : (
-                          "Indisponible"
-                        )}
+                        {!form.wilayaId
+                          ? "Sélectionnez une wilaya"
+                          : shippingRatesLoading
+                          ? "Chargement..."
+                          : `${effectivePrice.toLocaleString("fr-FR")} DA`}
                       </span>
                     </label>
                   );
@@ -523,16 +541,10 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            disabled={
-              loading ||
-              items.length === 0 ||
-              !selectedShippingRate
-            }
+            disabled={loading || items.length === 0 || !shippingMethodId}
             className="w-full rounded-full bg-[#0F2D52] py-4 text-lg font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading
-              ? "Création de la commande..."
-              : "Confirmer la commande"}
+            {loading ? "Création de la commande..." : "Confirmer la commande"}
           </button>
         </form>
 
@@ -541,9 +553,7 @@ export default function CheckoutPage() {
         ====================================================== */}
 
         <aside className="h-fit rounded-3xl border bg-white p-8 shadow-sm">
-          <h2 className="mb-6 text-2xl font-semibold">
-            Résumé
-          </h2>
+          <h2 className="mb-6 text-2xl font-semibold">Résumé</h2>
 
           {/* PRODUITS */}
 
@@ -565,10 +575,7 @@ export default function CheckoutPage() {
                   </span>
 
                   <span className="whitespace-nowrap">
-                    {(price * item.quantity).toLocaleString(
-                      "fr-FR"
-                    )}{" "}
-                    DA
+                    {(price * item.quantity).toLocaleString("fr-FR")} DA
                   </span>
                 </div>
               );
@@ -580,9 +587,7 @@ export default function CheckoutPage() {
           {/* SOUS-TOTAL */}
 
           <div className="flex justify-between">
-            <span className="text-neutral-600">
-              Sous-total
-            </span>
+            <span className="text-neutral-600">Sous-total</span>
 
             <span className="font-medium">
               {subtotal.toLocaleString("fr-FR")} DA
@@ -592,22 +597,16 @@ export default function CheckoutPage() {
           {/* LIVRAISON */}
 
           <div className="mt-3 flex justify-between">
-            <span className="text-neutral-600">
-              Livraison
-            </span>
+            <span className="text-neutral-600">Livraison</span>
 
             <span className="font-medium">
-              {!form.wilayaId ? (
-                "—"
-              ) : shippingRatesLoading ? (
-                "Chargement..."
-              ) : selectedShippingRate ? (
-                `${shippingPrice.toLocaleString(
-                  "fr-FR"
-                )} DA`
-              ) : (
-                "Indisponible"
-              )}
+              {!form.wilayaId
+                ? "—"
+                : shippingRatesLoading
+                ? "Chargement..."
+                : shippingMethodId
+                ? `${shippingPrice.toLocaleString("fr-FR")} DA`
+                : "—"}
             </span>
           </div>
 
@@ -616,13 +615,9 @@ export default function CheckoutPage() {
           {/* TOTAL */}
 
           <div className="flex justify-between text-xl font-semibold">
-            <span>
-              Total
-            </span>
+            <span>Total</span>
 
-            <span>
-              {total.toLocaleString("fr-FR")} DA
-            </span>
+            <span>{total.toLocaleString("fr-FR")} DA</span>
           </div>
         </aside>
       </div>
