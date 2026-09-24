@@ -12,6 +12,8 @@ class WilayaBase(BaseModel):
 
     name: str
 
+    name_ar: str | None = None
+
     home_shipping_price: Decimal = Field(ge=0)
 
     stopdesk_shipping_price: Decimal = Field(ge=0)
@@ -27,6 +29,9 @@ class WilayaUpdate(BaseModel):
     code: int | None = Field(default=None, ge=1, le=69)
 
     name: str | None = None
+
+
+    name_ar: str | None = None
 
     home_shipping_price: Decimal | None = Field(
         default=None,

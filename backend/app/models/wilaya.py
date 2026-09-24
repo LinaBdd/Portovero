@@ -29,9 +29,9 @@ class Wilaya(Base):
         nullable=False,
     )
 
-    name_ar: Mapped[str] = mapped_column(
+    name_ar: Mapped[str | None] = mapped_column(
         String(100),
-        nullable=False,
+        nullable=True,
     )
 
     home_shipping_price: Mapped[float] = mapped_column(
