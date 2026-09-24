@@ -23,6 +23,16 @@ import {
   ApiShippingRate,
 } from "../../lib/api/shpping";
 
+// Mots-clés utilisés pour deviner si une méthode est un retrait en point
+// relais / stopdesk plutôt qu'une livraison à domicile — même logique
+// que _is_stopdesk() côté backend (app/services/shipping_price.py).
+const STOPDESK_KEYWORDS = ["stopdesk", "stop desk", "point relais", "desk"];
+
+function isStopdesk(methodName: string) {
+  const name = methodName.toLowerCase();
+  return STOPDESK_KEYWORDS.some((kw) => name.includes(kw));
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
 
@@ -173,15 +183,25 @@ export default function CheckoutPage() {
   }, [items]);
 
   // --------------------------------------------------
-  // MÉTHODE + TARIF DE LIVRAISON SÉLECTIONNÉS
+  // WILAYA + MÉTHODE + TARIF DE LIVRAISON SÉLECTIONNÉS
   // --------------------------------------------------
+
+  const selectedWilaya = useMemo(() => {
+    if (!form.wilayaId) return null;
+
+    return (
+      wilayas.find((w) => String(w.id) === form.wilayaId) ?? null
+    );
+  }, [wilayas, form.wilayaId]);
 
   const selectedMethod = useMemo(() => {
     if (!shippingMethodId) return null;
 
-    return shippingMethods.find(
-      (method: ApiShippingMethod) => method.id === shippingMethodId
-    ) ?? null;
+    return (
+      shippingMethods.find(
+        (method: ApiShippingMethod) => method.id === shippingMethodId
+      ) ?? null
+    );
   }, [shippingMethods, shippingMethodId]);
 
   const selectedShippingRate = useMemo(() => {
@@ -198,15 +218,29 @@ export default function CheckoutPage() {
 
   // --------------------------------------------------
   // PRIX LIVRAISON
-  // Tarif spécifique à la wilaya s'il existe, sinon le prix de base
-  // de la méthode — même logique que get_shipping_price côté backend.
+  // Même ordre de priorité que get_shipping_price côté backend :
+  // 1. Tarif précis (wilaya, méthode) dans shipping_rates.
+  // 2. Tarif propre à la wilaya (home_shipping_price / stopdesk_shipping_price).
+  // 3. Prix de base de la méthode, en dernier recours.
   // --------------------------------------------------
 
-  const shippingPrice = selectedShippingRate
-    ? Number(selectedShippingRate.price)
-    : selectedMethod
-    ? Number(selectedMethod.base_price)
-    : 0;
+  const shippingPrice = useMemo(() => {
+    if (selectedShippingRate) {
+      return Number(selectedShippingRate.price);
+    }
+
+    if (selectedWilaya && selectedMethod) {
+      const wilayaPrice = isStopdesk(selectedMethod.name)
+        ? Number(selectedWilaya.stopdesk_shipping_price)
+        : Number(selectedWilaya.home_shipping_price);
+
+      if (wilayaPrice > 0) {
+        return wilayaPrice;
+      }
+    }
+
+    return selectedMethod ? Number(selectedMethod.base_price) : 0;
+  }, [selectedShippingRate, selectedWilaya, selectedMethod]);
 
   // --------------------------------------------------
   // TOTAL
@@ -475,11 +509,19 @@ export default function CheckoutPage() {
                       shippingRate.shipping_method_id === method.id
                   );
 
-                  // Prix effectif : le tarif spécifique à la wilaya, sinon
-                  // le prix de base de la méthode (même logique que le
-                  // backend, get_shipping_price).
+                  // Même priorité que côté backend : tarif précis >
+                  // tarif de la wilaya (domicile/stopdesk) > prix de
+                  // base de la méthode.
+                  const wilayaPrice = selectedWilaya
+                    ? isStopdesk(method.name)
+                      ? Number(selectedWilaya.stopdesk_shipping_price)
+                      : Number(selectedWilaya.home_shipping_price)
+                    : 0;
+
                   const effectivePrice = rate
                     ? Number(rate.price)
+                    : wilayaPrice > 0
+                    ? wilayaPrice
                     : Number(method.base_price);
 
                   const isSelected = shippingMethodId === method.id;
