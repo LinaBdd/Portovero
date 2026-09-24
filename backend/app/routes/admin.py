@@ -263,21 +263,6 @@ def delete_product_image_route(
 # ROUTES: USERS
 # ============================================================
 
-@router.get("/users", response_model=list[UserRead])
-def get_users_route(
-    db: Session = Depends(get_db),
-    _: dict = Depends(get_current_admin),
-):
-    """Récupère la liste des utilisateurs."""
-    return db.query(User).all()
-
-
-
-
-# ============================================================
-# ROUTES: USERS
-# ============================================================
-
 @router.get(
     "/users",
     response_model=UserList,
