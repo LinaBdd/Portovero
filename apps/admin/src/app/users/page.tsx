@@ -6,6 +6,7 @@ import {
   Search,
   Users,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -20,36 +21,43 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadUsers = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-
-    const data = await fetchUsers();
-
-    setUsers(Array.isArray(data) ? data : []);
-  } catch (error) {
-    console.error("Failed to load users:", error);
-    setUsers([]);
-    setError("Impossible de charger les utilisateurs.");
-  } finally {
-    setLoading(false);
-  }
-};
-
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      loadUsers();
+    let cancelled = false;
+
+    const timeout = setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await fetchUsers({ search: search.trim() });
+
+        if (cancelled) return;
+
+        setUsers(data.items);
+        setTotal(data.total);
+      } catch (err) {
+        if (cancelled) return;
+
+        console.error("Failed to load users:", err);
+        setUsers([]);
+        setTotal(0);
+        setError("Impossible de charger les utilisateurs.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }, 300);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [search]);
 
   return (
     <div className="space-y-6 p-6">
 
       {/* HEADER */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Utilisateurs
@@ -60,12 +68,22 @@ export default function UsersPage() {
           </p>
         </div>
 
-        <div className="flex h-11 items-center gap-2 rounded-lg border bg-background px-4">
-          <Users className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 items-center gap-2 rounded-lg border bg-background px-4">
+            <Users className="h-4 w-4 text-muted-foreground" />
 
-          <span className="text-sm font-medium">
-            {total} utilisateur{total > 1 ? "s" : ""}
-          </span>
+            <span className="text-sm font-medium">
+              {total} utilisateur{total > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <Link
+            href="/users/new"
+            className="inline-flex h-11 items-center gap-2 rounded-lg bg-black px-4 text-sm font-medium text-white transition hover:bg-black/90"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter un utilisateur
+          </Link>
         </div>
       </div>
 

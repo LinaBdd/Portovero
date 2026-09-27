@@ -1,8 +1,8 @@
 "use client";
-
+import { ApiError } from "@/lib/api/client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, UserRound } from "lucide-react";
+import { ArrowLeft, Mail, Phone, UserRound, Pencil } from "lucide-react";
 
 import {
   fetchUser,
@@ -23,27 +23,32 @@ export default function UserDetailsPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const { id } = await params;
+  async function load() {
+    try {
+      const { id } = await params;
+      const userId = Number(id);
 
-        const result = await fetchUser(
-          Number(id)
-        );
-
-        setUser(result);
-      } catch (err) {
-        console.error(err);
-        setError(
-          "Impossible de charger cet utilisateur."
-        );
-      } finally {
-        setLoading(false);
+      if (!Number.isInteger(userId) || userId <= 0) {
+        setError("Utilisateur introuvable.");
+        return;
       }
-    }
 
-    load();
-  }, [params]);
+      const result = await fetchUser(userId);
+      setUser(result);
+    } catch (err) {
+      console.error(err);
+      setError(
+        err instanceof ApiError && err.status === 404
+          ? "Utilisateur introuvable."
+          : "Impossible de charger cet utilisateur."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  load();
+ }, [params]);
 
   if (loading) {
     return (
@@ -91,25 +96,37 @@ export default function UserDetailsPage({
         Retour aux utilisateurs
       </Link>
 
-      {/* HEADER */}
-      <div className="flex items-center gap-4">
+             {/* HEADER */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
 
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-xl font-semibold text-white">
-          {user.first_name
-            .charAt(0)
-            .toUpperCase()}
+        <div className="flex items-center gap-4">
+
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-black text-xl font-semibold text-white">
+            {user.first_name
+              .charAt(0)
+              .toUpperCase()}
+          </div>
+
+          <div>
+            <h1 className="text-2xl font-semibold">
+              {user.first_name}{" "}
+              {user.last_name}
+            </h1>
+
+            <p className="text-sm text-muted-foreground">
+              Utilisateur #{user.id}
+            </p>
+          </div>
+
         </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold">
-            {user.first_name}{" "}
-            {user.last_name}
-          </h1>
-
-          <p className="text-sm text-muted-foreground">
-            Utilisateur #{user.id}
-          </p>
-        </div>
+        <Link
+          href={`/users/${user.id}/edit`}
+          className="inline-flex h-11 items-center gap-2 rounded-lg border bg-background px-4 text-sm font-medium transition hover:bg-muted"
+        >
+          <Pencil className="h-4 w-4" />
+          Modifier
+        </Link>
 
       </div>
 

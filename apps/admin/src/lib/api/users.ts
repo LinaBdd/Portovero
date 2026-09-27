@@ -56,3 +56,56 @@ export async function fetchUser(userId: number) {
     }
   );
 }
+
+export interface CreateUserPayload {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string | null;
+  password: string;
+  is_admin: boolean;
+}
+
+/**
+ * Crée un compte depuis l'admin.
+ * Le backend n'a pas de route dédiée : un client passe par
+ * /auth/register, un administrateur par /auth/admin/register.
+ */
+export async function createUser({
+  is_admin,
+  ...data
+}: CreateUserPayload) {
+  if (is_admin) {
+    return apiClient<User>("/auth/admin/register", {
+      method: "POST",
+      body: { ...data, role: "admin" },
+    });
+  }
+
+  return apiClient<User>("/auth/register", {
+    method: "POST",
+    body: data,
+  });
+}
+
+
+
+export interface UpdateUserPayload {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  email?: string | null;
+  password?: string;
+  is_active?: boolean;
+  is_admin?: boolean;
+}
+
+export async function updateUser(
+  userId: number,
+  data: UpdateUserPayload
+) {
+  return apiClient<User>(`/admin/users/${userId}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
