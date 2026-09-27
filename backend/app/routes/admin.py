@@ -5,10 +5,11 @@ from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile, s
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import func
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.auth.dependencies import get_current_admin
+from app.auth.hashing import hash_password
 
 # Modèles
 from app.models.product import Product
@@ -59,6 +60,18 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 class PaymentStatusUpdate(BaseModel):
     payment_status: str
+
+
+class AdminUserUpdate(BaseModel):
+    """Champs modifiables depuis l'admin. Seuls les champs envoyés changent."""
+
+    first_name: str | None = Field(default=None, min_length=2, max_length=50)
+    last_name: str | None = Field(default=None, min_length=2, max_length=50)
+    phone: str | None = Field(default=None, min_length=10, max_length=20)
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=8, max_length=128)
+    is_active: bool | None = None
+    is_admin: bool | None = None
 
 
 # ============================================================
@@ -347,6 +360,120 @@ def get_user_detail_route(
         )
 
     return user
+
+
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserDetail,
+)
+def update_user_route(
+    user_id: int,
+    data: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_admin),
+):
+    """
+    Modifie un utilisateur depuis l'administration.
+    Seuls les champs envoyés sont modifiés.
+    """
+
+    user = (
+        db.query(User)
+        .filter(User.id == user_id)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur introuvable",
+        )
+
+    # null = « pas de changement », sauf pour l'email où null le retire
+    values = {
+        key: value
+        for key, value in data.model_dump(exclude_unset=True).items()
+        if value is not None or key == "email"
+    }
+
+    # --------------------------------------------------------
+    # PROTECTION DU COMPTE CONNECTÉ
+    # --------------------------------------------------------
+
+    if user.id == current_admin.id:
+        if values.get("is_admin") is False:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vous ne pouvez pas retirer vos propres droits administrateur.",
+            )
+
+        if values.get("is_active") is False:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vous ne pouvez pas désactiver votre propre compte.",
+            )
+
+    # --------------------------------------------------------
+    # UNICITÉ DU TÉLÉPHONE ET DE L'EMAIL
+    # --------------------------------------------------------
+
+    if "phone" in values and values["phone"] != user.phone:
+        phone_taken = (
+            db.query(User)
+            .filter(
+                User.phone == values["phone"],
+                User.id != user.id,
+            )
+            .first()
+        )
+
+        if phone_taken:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ce numéro de téléphone est déjà utilisé par un autre compte.",
+            )
+
+    if values.get("email") and values["email"] != user.email:
+        email_taken = (
+            db.query(User)
+            .filter(
+                User.email == values["email"],
+                User.id != user.id,
+            )
+            .first()
+        )
+
+        if email_taken:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cette adresse email est déjà utilisée par un autre compte.",
+            )
+
+    # --------------------------------------------------------
+    # MOT DE PASSE
+    # --------------------------------------------------------
+
+    password = values.pop("password", None)
+
+    if password:
+        user.password_hash = hash_password(password)
+
+        # Un compte invité qui reçoit un mot de passe devient un compte inscrit
+        user.is_registered = True
+
+    # --------------------------------------------------------
+    # AUTRES CHAMPS
+    # --------------------------------------------------------
+
+    for key, value in values.items():
+        setattr(user, key, value)
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
 # ============================================================
 # ROUTES: ORDERS
 # ============================================================
