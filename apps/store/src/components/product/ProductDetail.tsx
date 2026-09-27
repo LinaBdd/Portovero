@@ -63,7 +63,7 @@ function colorImages(color: ProductColor | null | undefined): string[] {
 
 export function ProductDetail({ product }: Props) {
   const router = useRouter();
-  const { add } = useCart();
+  const { add, clear } = useCart();
 
   const initial = pickInitial(product);
 
@@ -73,9 +73,8 @@ export function ProductDetail({ product }: Props) {
     useState<ProductVariant | null>(initial.variant);
   const [quantity, setQuantity] = useState(1);
   const [ordering, setOrdering] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
 
-  // Barre d'achat flottante (mobile) : visible quand les boutons sortent de l'écran
+  // Barre de commande flottante (mobile) : visible quand le bouton sort de l'écran
   const actionsRef = useRef<HTMLDivElement>(null);
   const [showBar, setShowBar] = useState(false);
 
@@ -192,25 +191,16 @@ export function ProductDetail({ product }: Props) {
     return { color: selectedColor, variant: selectedVariant };
   }
 
-  const handleAddToCart = () => {
-    const selection = getSelection();
-    if (!selection) return;
-
-    add(product, selection.color, selection.variant, quantity);
-
-    toast.success("Produit ajouté au panier", { description: product.name });
-
-    setJustAdded(true);
-    window.setTimeout(() => setJustAdded(false), 1800);
-  };
-
-  const handleBuyNow = async () => {
+  // Pas de panier : « Commander » envoie uniquement ce produit au checkout.
+  // Le panier est vidé d'abord pour que la commande ne contienne que lui
+  // (pour un client connecté, le checkout lit le panier du serveur).
+  const handleOrder = async () => {
     const selection = getSelection();
     if (!selection || ordering) return;
 
     try {
       setOrdering(true);
-      // On attend l'ajout : pour un client connecté, le checkout lit le panier du serveur.
+      await clear();
       await add(product, selection.color, selection.variant, quantity);
       router.push("/checkout");
     } catch {
@@ -310,43 +300,30 @@ export function ProductDetail({ product }: Props) {
           </div>
 
           {/* Actions */}
-          <div ref={actionsRef} className="mt-10 space-y-3">
-            <div className="flex gap-3">
-              <QuantitySelector
-                quantity={quantity}
-                onChange={handleQuantityChange}
-                max={Math.max(1, currentStock)}
-              />
+          <div ref={actionsRef} className="mt-10 flex gap-3">
+            <QuantitySelector
+              quantity={quantity}
+              onChange={handleQuantityChange}
+              max={Math.max(1, currentStock)}
+            />
 
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isOutOfStock || ordering}
-                className="h-14 flex-1 rounded-full bg-[#172B3A] text-[15px] font-medium tracking-wide text-white shadow-[0_14px_30px_-14px_rgba(23,43,58,.7)] transition duration-300 hover:bg-[#0F2D52] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isOutOfStock
-                  ? "Rupture de stock"
-                  : justAdded
-                  ? "Ajouté ✓"
-                  : "Ajouter au panier"}
-              </button>
-            </div>
-
-            {!isOutOfStock && (
-              <button
-                type="button"
-                onClick={handleBuyNow}
-                disabled={ordering}
-                className="h-14 w-full rounded-full border border-[#172B3A]/25 text-[15px] font-medium text-[#172B3A] transition duration-300 hover:border-[#172B3A] hover:bg-[#172B3A]/5 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {ordering ? "Redirection..." : "Commander maintenant"}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleOrder}
+              disabled={isOutOfStock || ordering}
+              className="h-14 flex-1 rounded-full bg-[#172B3A] text-[15px] font-medium tracking-wide text-white shadow-[0_14px_30px_-14px_rgba(23,43,58,.7)] transition duration-300 hover:bg-[#0F2D52] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isOutOfStock
+                ? "Rupture de stock"
+                : ordering
+                ? "Redirection..."
+                : "Commander"}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ============ Barre d'achat flottante (mobile) ============ */}
+      {/* ============ Barre de commande flottante (mobile) ============ */}
       <div
         aria-hidden={!showBar || isOutOfStock}
         className={`fixed inset-x-0 bottom-0 z-40 border-t border-[#172B3A]/10 bg-[#F7F3EC]/90 px-5 pt-3 backdrop-blur-md transition-transform duration-300 lg:hidden ${
@@ -364,10 +341,11 @@ export function ProductDetail({ product }: Props) {
           <button
             type="button"
             tabIndex={showBar ? 0 : -1}
-            onClick={handleAddToCart}
-            className="h-12 shrink-0 rounded-full bg-[#172B3A] px-7 text-sm font-medium text-white"
+            onClick={handleOrder}
+            disabled={ordering}
+            className="h-12 shrink-0 rounded-full bg-[#172B3A] px-7 text-sm font-medium text-white disabled:opacity-50"
           >
-            {justAdded ? "Ajouté ✓" : "Ajouter"}
+            Commander
           </button>
         </div>
       </div>
